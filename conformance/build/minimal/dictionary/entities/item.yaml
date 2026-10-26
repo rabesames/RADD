@@ -1,0 +1,12 @@
+entity: Item
+description: An item.
+primaryKey: id
+fields:
+  id:
+    type: integer
+    description: Key.
+  name:
+    type: string
+    maxLength: 50
+    required: true
+    description: Name.

@@ -1,0 +1,100 @@
+{
+  "calculators": {},
+  "databases": [
+    "sqlite"
+  ],
+  "description": "The smallest valid dictionary.",
+  "entities": {
+    "Item": {
+      "apiName": "item",
+      "audit": false,
+      "dbName": "Item",
+      "description": "An item.",
+      "fieldOrder": [
+        "id",
+        "name"
+      ],
+      "fields": {
+        "id": {
+          "apiName": "id",
+          "dbName": "Id",
+          "description": "Key.",
+          "label": "item.id.label",
+          "messages": {
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": false,
+          "rules": [],
+          "type": "integer",
+          "validators": []
+        },
+        "name": {
+          "apiName": "name",
+          "dbName": "Name",
+          "description": "Name.",
+          "label": "item.name.label",
+          "maxLength": 50,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        }
+      },
+      "indexes": [],
+      "label": "item.label",
+      "primaryKey": [
+        "id"
+      ],
+      "relationships": {},
+      "rules": [],
+      "softDelete": false,
+      "validators": []
+    }
+  },
+  "expressions": {
+    "extensions": []
+  },
+  "formatVersion": 1,
+  "functions": {},
+  "locales": {
+    "default": "en",
+    "supported": [
+      "en"
+    ]
+  },
+  "lookupDefaults": {
+    "ttlSeconds": 600
+  },
+  "lookups": {},
+  "messages": {
+    "en": {
+      "item.id.label": "ID",
+      "item.label": "Item",
+      "item.name.label": "Name",
+      "radd.format.email": "{label} must be a valid email address.",
+      "radd.format.phone": "{label} must be a valid phone number.",
+      "radd.format.url": "{label} must be a valid URL.",
+      "radd.lookup": "{label} is not an allowed value.",
+      "radd.max": "{label} must be at most {max}.",
+      "radd.maxLength": "{label} must be at most {max} characters.",
+      "radd.min": "{label} must be at least {min}.",
+      "radd.minLength": "{label} must be at least {min} characters.",
+      "radd.pattern": "{label} is not in the expected format.",
+      "radd.precision": "{label} must have at most {precision} digits.",
+      "radd.required": "{label} is required.",
+      "radd.scale": "{label} must have at most {scale} decimal places.",
+      "radd.type": "{label} has an invalid value."
+    }
+  },
+  "name": "minimal",
+  "types": {},
+  "validators": {},
+  "version": "sha256:fa03fac9c0b70299aa2cfa4d70d01c5e0741f884320386d6367e50475533cc42"
+}
