@@ -33,4 +33,15 @@ Every architectural or Rommel-level decision in RADD is recorded here, in the sa
 | [ADR-0022](ADR-0022.md) | Localized text in per-locale YAML files using ICU MessageFormat | Accepted | 2026-10-26 |  |
 | [ADR-0023](ADR-0023.md) | A shared conformance suite, not shared code, keeps runtimes consistent | Accepted | 2026-10-26 |  |
 | [ADR-0024](ADR-0024.md) | The first stack is React + TypeScript, ASP.NET Core with EF Core, and SQLite | Accepted | 2026-10-26 |  |
+| [ADR-0025](ADR-0025.md) | Repository layout and TypeScript tooling | Accepted | 2026-10-26 |  |
+| [ADR-0026](ADR-0026.md) | Dictionary folder layout, YAML 1.2 and the YAML features RADD allows | Accepted | 2026-10-26 |  |
+| [ADR-0027](ADR-0027.md) | JSON Schema draft 2020-12, validated with Ajv, with a keyword set editors understand | Accepted | 2026-10-26 |  |
+| [ADR-0028](ADR-0028.md) | Canonical form and version hash | Accepted | 2026-10-26 |  |
+| [ADR-0029](ADR-0029.md) | Logical, database and API names for entities and fields | Accepted | 2026-10-26 |  |
+| [ADR-0031](ADR-0031.md) | Literal defaults and expression defaults are written differently | Accepted | 2026-10-26 |  |
+| [ADR-0032](ADR-0032.md) | Lint diagnostics, rule codes and the CLI contract | Accepted | 2026-10-26 |  |
+| [ADR-0033](ADR-0033.md) | Locales are declared by the dictionary | Accepted | 2026-10-26 |  |
+| [ADR-0034](ADR-0034.md) | ADR enforcement through a required CI check, with the merge as approval | Accepted | 2026-10-26 |  |
+| [ADR-0035](ADR-0035.md) | Foreign keys, relationships and lookup defaults | Accepted | 2026-10-26 |  |
+| [ADR-0036](ADR-0036.md) | Lexical CEL checks in lint until the CEL library is chosen | Accepted | 2026-10-26 |  |
 <!-- adr-index:end -->
