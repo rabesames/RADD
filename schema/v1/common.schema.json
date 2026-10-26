@@ -132,12 +132,13 @@
         "code": { "$ref": "#/$defs/code" },
         "message": {
           "$ref": "#/$defs/messageKey",
-          "description": "Message key for the result. Must exist in the default locale."
+          "description": "Message key for the result. Must exist in the default locale. Required for expression rules."
         },
         "description": { "$ref": "#/$defs/description" }
       },
       "if": { "required": ["expression"] },
       "then": {
+        "required": ["message"],
         "properties": { "required": false, "readOnly": false, "visible": false }
       },
       "else": {

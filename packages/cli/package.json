@@ -12,6 +12,7 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@radd/core": "0.1.0-alpha.0"
+    "@radd/core": "0.1.0-alpha.0",
+    "commander": "^15.0.0"
   }
 }
