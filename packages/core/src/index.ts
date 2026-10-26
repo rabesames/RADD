@@ -1,6 +1,7 @@
 import { buildCanonical } from "./canonical.js";
 import { compareDiagnostics, type Diagnostic, type PendingDiagnostic, RULES, toPointer } from "./diagnostics.js";
 import { formatCanonical } from "./hash.js";
+import { lintSemantics } from "./lint.js";
 import { type LoadedDictionary, loadDictionary } from "./loader.js";
 import { locate } from "./source.js";
 
@@ -63,6 +64,8 @@ function summarize(diagnostics: Diagnostic[]): LintResult {
 function run(dir: string): { loaded: LoadedDictionary; result: LintResult } {
   const loaded = loadDictionary(dir);
   const pending = [...loaded.diagnostics];
+  // Semantic rules need dictionary.yaml; without it only file-level problems are reported.
+  if (loaded.dictionary) pending.push(...lintSemantics(loaded));
   return { loaded, result: summarize(resolveDiagnostics(loaded, pending)) };
 }
 
