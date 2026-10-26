@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/validators.schema.json",
+  "$comment": "Generated from schema/src/validators.schema.jsonc by npm run schema:build. Do not edit.",
+  "title": "RADD named validators",
+  "description": "Named server validators (validators.yaml). Each runtime registers an implementation by name; startup fails if one is missing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "validators"
+  ],
+  "properties": {
+    "validators": {
+      "type": "object",
+      "description": "Validators by name (lowerCamelCase), for example uniqueCustomerEmail.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scope"
+        ],
+        "properties": {
+          "description": {
+            "$ref": "common.schema.json#/$defs/description"
+          },
+          "scope": {
+            "type": "string",
+            "description": "field: validates one field's value (IFieldValidator). entity: validates the whole record (IEntityValidator).",
+            "enum": [
+              "field",
+              "entity"
+            ]
+          },
+          "parameters": {
+            "type": "array",
+            "description": "Parameters a use may pass in params.",
+            "items": {
+              "$ref": "common.schema.json#/$defs/parameter"
+            }
+          },
+          "message": {
+            "$ref": "common.schema.json#/$defs/messageKey",
+            "description": "Default message key, used when no field-specific key exists."
+          }
+        }
+      }
+    }
+  }
+}

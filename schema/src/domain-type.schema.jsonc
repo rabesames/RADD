@@ -1,0 +1,36 @@
+// One domain type per file (types/*.yaml). Edit this file, not schema/v1; see common.schema.jsonc.
+// The properties mirror a field's, minus those that only make sense on one field (names, keys,
+// labels, relationships, computed). Fields inherit everything here and may override constraints.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/domain-type.schema.json",
+  "title": "RADD domain type",
+  "description": "A reusable domain type (types/*.yaml): a logical type with default constraints and rules, for example Email.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["domainType", "type"],
+  "properties": {
+    "domainType": {
+      "type": "string",
+      "description": "Domain type name, PascalCase, for example MobileNumber."
+    },
+    "description": { "$ref": "common.schema.json#/$defs/description" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "type": { "$ref": "common.schema.json#/$defs/logicalType" },
+    "default": { "$ref": "common.schema.json#/$defs/default" },
+    "maxLength": { "$ref": "common.schema.json#/$defs/constraints/properties/maxLength" },
+    "minLength": { "$ref": "common.schema.json#/$defs/constraints/properties/minLength" },
+    "precision": { "$ref": "common.schema.json#/$defs/constraints/properties/precision" },
+    "scale": { "$ref": "common.schema.json#/$defs/constraints/properties/scale" },
+    "min": { "$ref": "common.schema.json#/$defs/constraints/properties/min" },
+    "max": { "$ref": "common.schema.json#/$defs/constraints/properties/max" },
+    "format": { "$ref": "common.schema.json#/$defs/constraints/properties/format" },
+    "pattern": { "$ref": "common.schema.json#/$defs/constraints/properties/pattern" },
+    "mask": { "$ref": "common.schema.json#/$defs/constraints/properties/mask" },
+    "displayFormat": { "$ref": "common.schema.json#/$defs/displayFormat" },
+    "editFormat": { "$ref": "common.schema.json#/$defs/editFormat" },
+    "lookup": { "$ref": "common.schema.json#/$defs/lookup" },
+    "rules": { "$ref": "common.schema.json#/$defs/rules" },
+    "validators": { "$ref": "common.schema.json#/$defs/validators" }
+  }
+}

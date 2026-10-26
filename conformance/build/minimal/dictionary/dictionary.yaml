@@ -1,0 +1,5 @@
+name: minimal
+description: The smallest valid dictionary.
+formatVersion: 1
+locales: { default: en, supported: [en] }
+databases: [sqlite]

@@ -1,0 +1,20 @@
+entity: Country
+description: A country customers can live in, identified by its ISO 3166-1 alpha-2 code.
+# The table and the code column keep the names of an existing database.
+dbName: Countries
+primaryKey: code
+fields:
+  code:
+    type: string
+    maxLength: 2
+    minLength: 2
+    required: true
+    pattern: "^[A-Z]{2}$"
+    dbName: IsoCode
+    editFormat: { kind: text, case: upper, trim: true }
+    description: ISO 3166-1 alpha-2 country code, for example PH.
+  name:
+    type: string
+    maxLength: 100
+    required: true
+    description: Country name in English.

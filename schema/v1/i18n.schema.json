@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/i18n.schema.json",
+  "$comment": "Generated from schema/src/i18n.schema.jsonc by npm run schema:build. Do not edit.",
+  "title": "RADD messages",
+  "description": "Labels and messages for one locale (i18n/<locale>.yaml or i18n/<locale>/*.yaml): a flat map of message key to ICU MessageFormat text.",
+  "type": "object",
+  "propertyNames": {
+    "$ref": "common.schema.json#/$defs/messageKey"
+  },
+  "additionalProperties": {
+    "type": "string",
+    "description": "ICU MessageFormat text, for example \"{label} must be at most {max} characters.\""
+  }
+}

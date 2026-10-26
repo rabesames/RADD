@@ -1,0 +1,4 @@
+// Pins the .NET SDK band: 10.0.100 or any later 10.0 feature band (.NET 10 LTS).
+{
+  "sdk": { "version": "10.0.100", "rollForward": "latestFeature" }
+}

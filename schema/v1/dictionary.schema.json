@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/dictionary.schema.json",
+  "$comment": "Generated from schema/src/dictionary.schema.jsonc by npm run schema:build. Do not edit.",
+  "title": "RADD dictionary",
+  "description": "The dictionary's root file (dictionary.yaml).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "formatVersion",
+    "locales",
+    "databases"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the system this dictionary serves, kebab-case, for example acme-orders.",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+    },
+    "description": {
+      "$ref": "common.schema.json#/$defs/description"
+    },
+    "formatVersion": {
+      "const": 1,
+      "description": "The RADD dictionary format these files are written in. The dictionary's own version is the content hash computed by radd build."
+    },
+    "locales": {
+      "type": "object",
+      "description": "Locales with labels and messages in i18n/.",
+      "additionalProperties": false,
+      "required": [
+        "default",
+        "supported"
+      ],
+      "properties": {
+        "default": {
+          "$ref": "#/$defs/locale",
+          "description": "Default locale. Every key must exist in it; other locales fall back to it."
+        },
+        "supported": {
+          "type": "array",
+          "description": "Every supported locale, including the default.",
+          "items": {
+            "$ref": "#/$defs/locale"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "databases": {
+      "type": "array",
+      "description": "Database providers this dictionary must support. Database-computed fields need SQL for each.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "sqlite",
+          "sqlserver",
+          "postgres"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "expressions": {
+      "type": "object",
+      "description": "The declared CEL subset.",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "type": "array",
+          "description": "CEL extension libraries expressions may use. Anything else fails lint.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "strings",
+              "math",
+              "lists",
+              "sets",
+              "encoders"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "lookups": {
+      "type": "object",
+      "description": "Defaults for reference-table lookups.",
+      "additionalProperties": false,
+      "properties": {
+        "defaultTtl": {
+          "$ref": "common.schema.json#/$defs/duration",
+          "description": "Expiry for lookups with cache: ttl and no ttl of their own.",
+          "default": "10m"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "locale": {
+      "type": "string",
+      "description": "A BCP 47 language tag, for example en, fil or en-PH.",
+      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+    }
+  }
+}

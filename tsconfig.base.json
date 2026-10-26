@@ -1,0 +1,23 @@
+// Compiler options shared by every package; each package's tsconfig.json extends this file.
+{
+  "compilerOptions": {
+    // Node 24 supports ES2023 natively, so nothing is down-levelled.
+    "target": "es2023",
+    "lib": ["es2023"],
+    // ESM with Node's resolution rules: relative imports need their .js extension.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    // Indexing a record or array may return undefined, as it can at run time.
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "declaration": true,
+    "sourceMap": true,
+    // Required for project references (tsc -b).
+    "composite": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
+  }
+}

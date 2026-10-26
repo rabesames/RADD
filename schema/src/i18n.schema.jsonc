@@ -1,0 +1,15 @@
+// One locale's messages (i18n/<locale>.yaml or i18n/<locale>/*.yaml). Edit this file, not
+// schema/v1; see common.schema.jsonc. The schema checks key shape only; ICU syntax (RADD504),
+// display-hint HTML (RADD506) and missing or unused keys (RADD501 to RADD503) are lint.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/i18n.schema.json",
+  "title": "RADD messages",
+  "description": "Labels and messages for one locale (i18n/<locale>.yaml or i18n/<locale>/*.yaml): a flat map of message key to ICU MessageFormat text.",
+  "type": "object",
+  "propertyNames": { "$ref": "common.schema.json#/$defs/messageKey" },
+  "additionalProperties": {
+    "type": "string",
+    "description": "ICU MessageFormat text, for example \"{label} must be at most {max} characters.\""
+  }
+}

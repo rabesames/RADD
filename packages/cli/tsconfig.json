@@ -1,0 +1,8 @@
+// @radd/cli: the radd command. Compiles src to dist.
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "include": ["src"],
+  // Builds @radd/core first.
+  "references": [{ "path": "../core" }]
+}

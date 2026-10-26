@@ -1,0 +1,100 @@
+{
+  "calculators": {},
+  "databases": [
+    "sqlite"
+  ],
+  "description": "The smallest valid dictionary.",
+  "entities": {
+    "Item": {
+      "apiName": "item",
+      "audit": false,
+      "dbName": "Item",
+      "description": "An item.",
+      "displayLabel": "item.displayLabel",
+      "fieldOrder": [
+        "id",
+        "name"
+      ],
+      "fields": {
+        "id": {
+          "apiName": "id",
+          "dbName": "Id",
+          "description": "Key.",
+          "displayLabel": "item.id.displayLabel",
+          "messages": {
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": false,
+          "rules": [],
+          "type": "integer",
+          "validators": []
+        },
+        "name": {
+          "apiName": "name",
+          "dbName": "Name",
+          "description": "Name.",
+          "displayLabel": "item.name.displayLabel",
+          "maxLength": 50,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        }
+      },
+      "indexes": [],
+      "primaryKey": [
+        "id"
+      ],
+      "relationships": {},
+      "rules": [],
+      "softDelete": false,
+      "validators": []
+    }
+  },
+  "expressions": {
+    "extensions": []
+  },
+  "formatVersion": 1,
+  "functions": {},
+  "locales": {
+    "default": "en",
+    "supported": [
+      "en"
+    ]
+  },
+  "lookupDefaults": {
+    "ttlSeconds": 600
+  },
+  "lookups": {},
+  "messages": {
+    "en": {
+      "item.displayLabel": "Item",
+      "item.id.displayLabel": "ID",
+      "item.name.displayLabel": "Name",
+      "radd.format.email": "{label} must be a valid email address.",
+      "radd.format.phone": "{label} must be a valid phone number.",
+      "radd.format.url": "{label} must be a valid URL.",
+      "radd.lookup": "{label} is not an allowed value.",
+      "radd.max": "{label} must be at most {max}.",
+      "radd.maxLength": "{label} must be at most {max} characters.",
+      "radd.min": "{label} must be at least {min}.",
+      "radd.minLength": "{label} must be at least {min} characters.",
+      "radd.pattern": "{label} is not in the expected format.",
+      "radd.precision": "{label} must have at most {precision} digits.",
+      "radd.required": "{label} is required.",
+      "radd.scale": "{label} must have at most {scale} decimal places.",
+      "radd.type": "{label} has an invalid value."
+    }
+  },
+  "name": "minimal",
+  "types": {},
+  "validators": {},
+  "version": "sha256:e1712bc100cbe9edd0cb6a0a99f0d85381deb5a37e644dfc0f141d0bfb975518"
+}

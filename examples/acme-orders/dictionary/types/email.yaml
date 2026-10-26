@@ -1,0 +1,6 @@
+domainType: Email
+description: An email address. Personal data.
+type: string
+maxLength: 254
+format: email
+tags: [pii]

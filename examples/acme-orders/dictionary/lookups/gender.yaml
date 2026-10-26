@@ -1,0 +1,7 @@
+lookup: gender
+description: Gender as stated by the customer.
+valueType: string
+items:
+  - { code: M, label: gender.male }
+  - { code: F, label: gender.female }
+  - { code: X, label: gender.unspecified, active: false }

@@ -1,0 +1,8 @@
+domainType: Money
+description: An amount in Philippine pesos, to the centavo.
+type: decimal
+precision: 12
+scale: 2
+tags: [financial]
+displayFormat: { kind: number, pattern: "#,##0.00" }
+editFormat: { kind: number, decimals: 2, grouping: false }

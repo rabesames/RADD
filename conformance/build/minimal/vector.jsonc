@@ -1,0 +1,5 @@
+// Defaults are what a runtime is most likely to get wrong, so this vector writes almost nothing
+// and checks that the build spells every default out.
+{
+  "description": "The smallest valid dictionary, one entity with two fields; every default is made explicit."
+}

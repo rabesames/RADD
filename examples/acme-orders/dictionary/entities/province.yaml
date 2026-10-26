@@ -1,0 +1,23 @@
+entity: Province
+description: A first-level administrative division of a country.
+primaryKey: id
+fields:
+  id:
+    type: integer
+    generated: identity
+    description: Surrogate key, assigned by the database (1, 2, 3, ...).
+  countryCode:
+    type: string
+    maxLength: 2
+    required: true
+    references: { entity: Country }
+    description: Country the province belongs to.
+  name:
+    type: string
+    maxLength: 100
+    required: true
+    description: Province name.
+indexes:
+  - { fields: [countryCode, name], unique: true, description: Province names are unique within a country. }
+relationships:
+  country: { kind: manyToOne, entity: Country, foreignKey: countryCode }

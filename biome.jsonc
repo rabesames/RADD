@@ -1,0 +1,30 @@
+// Biome formats and lints the TypeScript, JavaScript and JSON(C) files.
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+  // Skip whatever .gitignore skips (node_modules, dist, .radd).
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "**",
+      // Markdown and YAML are written by hand: Biome reflowed spec tables and rewrote
+      // dictionary flow mappings, so it stays out of them.
+      "!**/*.md",
+      "!**/*.yaml",
+      "!**/dist",
+      // Generated output: expected.json is compared byte for byte, and schema/v1 is written by
+      // npm run schema:build from schema/src.
+      "!conformance/**/expected.json",
+      "!schema/v1",
+      "!**/__snapshots__"
+    ]
+  },
+  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
+  "linter": { "enabled": true, "rules": { "preset": "recommended" } },
+  "javascript": { "formatter": { "quoteStyle": "double" } },
+  "assist": { "enabled": true, "actions": { "source": { "organizeImports": "on" } } },
+  "overrides": [
+    // Biome already allows comments in tsconfig and .vscode files; the .NET SDK accepts them in
+    // global.json too, which Biome does not know.
+    { "includes": ["dotnet/global.json"], "json": { "parser": { "allowComments": true } } }
+  ]
+}

@@ -1,0 +1,939 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/common.schema.json",
+  "$comment": "Generated from schema/src/common.schema.jsonc by npm run schema:build. Do not edit.",
+  "title": "RADD shared definitions",
+  "description": "Definitions shared by the RADD dictionary file schemas.",
+  "$defs": {
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What this is and why it exists, in plain language. Required by lint (RADD401): descriptions are what make the dictionary useful to people and AI agents."
+    },
+    "tags": {
+      "type": "array",
+      "description": "Free-form classification tags. Well-known tags: pii (personal data), financial, audit. Values of fields tagged pii or financial are never logged.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-zA-Z0-9-]*$"
+      },
+      "uniqueItems": true
+    },
+    "logicalType": {
+      "type": "string",
+      "description": "Logical type. Each database adapter maps it to a native type; never use database types here.",
+      "enum": [
+        "string",
+        "text",
+        "integer",
+        "long",
+        "decimal",
+        "boolean",
+        "date",
+        "time",
+        "datetime",
+        "datetimeOffset",
+        "guid",
+        "binary"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "description": "error: the save is rejected. warning: the save is rejected until the client resubmits with the code acknowledged. info: advisory; the save proceeds.",
+      "enum": [
+        "error",
+        "warning",
+        "info"
+      ],
+      "default": "error"
+    },
+    "messageKey": {
+      "type": "string",
+      "description": "A message key resolved from i18n/, for example customer.vipNotes.recommended.",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(\\.[a-zA-Z0-9_-]+)+$"
+    },
+    "code": {
+      "type": "string",
+      "description": "Stable result code returned by validation and used to acknowledge warnings. Defaults to the message key.",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*(\\.[a-zA-Z0-9_-]+)+$"
+    },
+    "expression": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A CEL expression. Fields are referenced by their logical name; ctx holds server-supplied values such as ctx.today, ctx.now and ctx.locale."
+    },
+    "dbName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Name in the database. Defaults to the TitleCase form of the logical name (countryCode becomes CountryCode). Override only to match an existing schema."
+    },
+    "apiName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Name in the API (JSON properties and /_radd route segments). Defaults to the camelCase form of the logical name."
+    },
+    "duration": {
+      "type": "string",
+      "description": "A duration: a positive whole number followed by s, m, h or d, for example 10m.",
+      "pattern": "^[1-9][0-9]*[smhd]$"
+    },
+    "parameter": {
+      "type": "object",
+      "description": "A parameter accepted by a named validator or calculator.",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Parameter name, lowerCamelCase."
+        },
+        "type": {
+          "type": "string",
+          "description": "Parameter value type.",
+          "enum": [
+            "string",
+            "integer",
+            "decimal",
+            "boolean",
+            "date",
+            "stringList"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether every use must supply this parameter.",
+          "default": false
+        },
+        "description": {
+          "$ref": "#/$defs/description"
+        }
+      }
+    },
+    "default": {
+      "description": "Default value. A literal of the field's type, or { expression: \"...\" } for a computed default such as newGuid() or ctx.now.",
+      "oneOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expression"
+          ],
+          "properties": {
+            "expression": {
+              "$ref": "#/$defs/expression"
+            }
+          }
+        }
+      ]
+    },
+    "generated": {
+      "description": "Primary key value generation. identity: the database assigns 1, 2, 3, ... (integer or long). uuid: the application assigns a GUID before insert (guid). Generated keys are always read-only.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "identity",
+            "uuid"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "description": "identity (database auto-increment) or uuid (application-generated GUID).",
+              "enum": [
+                "identity",
+                "uuid"
+              ]
+            },
+            "seed": {
+              "type": "integer",
+              "description": "Identity: first value. Ignored by SQLite, which always starts at 1.",
+              "default": 1
+            },
+            "increment": {
+              "type": "integer",
+              "not": {
+                "const": 0
+              },
+              "description": "Identity: step between values. Ignored by SQLite, which always increments by 1.",
+              "default": 1
+            },
+            "noReuse": {
+              "type": "boolean",
+              "description": "Identity on SQLite: emit AUTOINCREMENT so keys of deleted rows are never reused, at a small write cost.",
+              "default": false
+            }
+          },
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "uuid"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seed": false,
+              "increment": false,
+              "noReuse": false
+            }
+          }
+        }
+      ]
+    },
+    "textKey": {
+      "$ref": "#/$defs/messageKey",
+      "description": "Message key to use instead of the derived one, for example when two fields share a label."
+    },
+    "symbols": {
+      "type": "object",
+      "description": "Fixed grouping and decimal symbols, so the value looks the same in every locale. Omit to follow the viewer's locale.",
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "type": "string",
+          "maxLength": 1,
+          "description": "Grouping separator, for example \",\"."
+        },
+        "decimal": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1,
+          "description": "Decimal separator, for example \".\"."
+        }
+      }
+    },
+    "displayFormat": {
+      "type": "object",
+      "description": "How a stored value is rendered for reading, using ICU patterns. Presentation only: the API stores and returns raw values.",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "number, percent, currency (numeric fields); date, time, datetime; boolean; text.",
+          "enum": [
+            "number",
+            "percent",
+            "currency",
+            "date",
+            "time",
+            "datetime",
+            "boolean",
+            "text"
+          ]
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "ICU pattern: a number pattern such as \"#,##0.00\", \"0.0%\" or \"¤#,##0.00\", or a date pattern such as \"yyyy-MM-dd\"."
+        },
+        "symbols": {
+          "$ref": "#/$defs/symbols"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency: an ISO 4217 code such as PHP, or the name of a field holding one."
+        },
+        "style": {
+          "type": "string",
+          "description": "Date and time: a named style instead of a pattern.",
+          "enum": [
+            "short",
+            "medium",
+            "long"
+          ]
+        },
+        "true": {
+          "$ref": "#/$defs/messageKey",
+          "description": "Boolean: message key shown for true."
+        },
+        "false": {
+          "$ref": "#/$defs/messageKey",
+          "description": "Boolean: message key shown for false."
+        },
+        "case": {
+          "type": "string",
+          "description": "Text: change the case for display.",
+          "enum": [
+            "upper",
+            "lower",
+            "title"
+          ]
+        },
+        "mask": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Text: display mask where 0 is a digit, A a letter and * any character; other characters are shown as is."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "number",
+                  "percent"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "pattern"
+            ],
+            "properties": {
+              "currency": false,
+              "style": false,
+              "true": false,
+              "false": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "currency"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "pattern",
+              "currency"
+            ],
+            "properties": {
+              "style": false,
+              "true": false,
+              "false": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "date",
+                  "time",
+                  "datetime"
+                ]
+              }
+            }
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "pattern"
+                ]
+              },
+              {
+                "required": [
+                  "style"
+                ]
+              }
+            ],
+            "properties": {
+              "symbols": false,
+              "currency": false,
+              "true": false,
+              "false": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "boolean"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "true",
+              "false"
+            ],
+            "properties": {
+              "pattern": false,
+              "symbols": false,
+              "currency": false,
+              "style": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "case"
+                ]
+              },
+              {
+                "required": [
+                  "mask"
+                ]
+              }
+            ],
+            "properties": {
+              "pattern": false,
+              "symbols": false,
+              "currency": false,
+              "style": false,
+              "true": false,
+              "false": false
+            }
+          }
+        }
+      ]
+    },
+    "editFormat": {
+      "type": "object",
+      "description": "How the value looks and is typed while editing, and how input is parsed back to a raw value.",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "number (numeric fields); mask and text (string fields); date, time, datetime.",
+          "enum": [
+            "number",
+            "mask",
+            "date",
+            "time",
+            "datetime",
+            "text"
+          ]
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number: decimal places shown while editing."
+        },
+        "grouping": {
+          "type": "boolean",
+          "description": "Number: show grouping separators while typing.",
+          "default": false
+        },
+        "allowNegative": {
+          "type": "boolean",
+          "description": "Number: accept a minus sign.",
+          "default": true
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Mask: 0 is a digit, A a letter, * any character, for example \"0000-000-0000\". Date and time: ICU pattern for typed input, for example \"yyyy-MM-dd\"."
+        },
+        "storeLiterals": {
+          "type": "boolean",
+          "description": "Mask: keep the mask's literal characters in the stored value.",
+          "default": false
+        },
+        "case": {
+          "type": "string",
+          "description": "Text: change the case as the user types.",
+          "enum": [
+            "upper",
+            "lower",
+            "title"
+          ]
+        },
+        "trim": {
+          "type": "boolean",
+          "description": "Text: trim surrounding spaces.",
+          "default": false
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "number"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "pattern": false,
+              "storeLiterals": false,
+              "case": false,
+              "trim": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "mask"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "pattern"
+            ],
+            "properties": {
+              "decimals": false,
+              "grouping": false,
+              "allowNegative": false,
+              "case": false,
+              "trim": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "date",
+                  "time",
+                  "datetime"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "pattern"
+            ],
+            "properties": {
+              "decimals": false,
+              "grouping": false,
+              "allowNegative": false,
+              "storeLiterals": false,
+              "case": false,
+              "trim": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "decimals": false,
+              "grouping": false,
+              "allowNegative": false,
+              "pattern": false,
+              "storeLiterals": false
+            }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "description": "A conditional rule (when + required, readOnly or visible) or an expression rule (expression, optionally guarded by when).",
+      "additionalProperties": false,
+      "properties": {
+        "when": {
+          "$ref": "#/$defs/expression",
+          "description": "Condition under which the rule applies (CEL)."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Conditional: the field is required while when is true."
+        },
+        "readOnly": {
+          "type": "boolean",
+          "description": "Conditional: the field is read-only while when is true."
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Conditional UI hint: the field is visible while when is true."
+        },
+        "expression": {
+          "$ref": "#/$defs/expression",
+          "description": "Expression rule: a boolean CEL expression that must be true, for example endDate >= startDate."
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "code": {
+          "$ref": "#/$defs/code"
+        },
+        "message": {
+          "$ref": "#/$defs/messageKey",
+          "description": "Message key for the result. Must exist in the default locale. Required for expression rules."
+        },
+        "description": {
+          "$ref": "#/$defs/description"
+        }
+      },
+      "if": {
+        "required": [
+          "expression"
+        ]
+      },
+      "then": {
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "required": false,
+          "readOnly": false,
+          "visible": false
+        }
+      },
+      "else": {
+        "required": [
+          "when"
+        ],
+        "anyOf": [
+          {
+            "required": [
+              "required"
+            ]
+          },
+          {
+            "required": [
+              "readOnly"
+            ]
+          },
+          {
+            "required": [
+              "visible"
+            ]
+          }
+        ]
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Conditional and expression rules.",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "validatorUse": {
+      "type": "object",
+      "description": "Use of a named server validator declared in validators.yaml.",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Validator name as declared in validators.yaml."
+        },
+        "params": {
+          "type": "object",
+          "description": "Parameter values, by parameter name."
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "code": {
+          "$ref": "#/$defs/code"
+        },
+        "message": {
+          "$ref": "#/$defs/messageKey",
+          "description": "Message key. Defaults to <entity>.<field>.<validatorName>, then the validator's declared message."
+        }
+      }
+    },
+    "validators": {
+      "type": "array",
+      "description": "Named server validators. They run only on the API.",
+      "items": {
+        "$ref": "#/$defs/validatorUse"
+      }
+    },
+    "lookup": {
+      "type": "object",
+      "description": "Lookup: a static list ({ list: gender }) or a reference table ({ entity, value, display }). A reference-table lookup creates a foreign key.",
+      "additionalProperties": false,
+      "properties": {
+        "list": {
+          "type": "string",
+          "description": "Name of a static lookup in lookups/."
+        },
+        "entity": {
+          "type": "string",
+          "description": "Entity whose rows are the allowed values."
+        },
+        "value": {
+          "type": "string",
+          "description": "Field of the entity that is stored."
+        },
+        "display": {
+          "type": "string",
+          "description": "Field of the entity that is shown."
+        },
+        "cache": {
+          "type": "string",
+          "description": "static: loaded once per dictionary version. ttl: cached with an expiry. dynamic: queried on every use.",
+          "enum": [
+            "static",
+            "ttl",
+            "dynamic"
+          ],
+          "default": "ttl"
+        },
+        "ttl": {
+          "$ref": "#/$defs/duration",
+          "description": "Expiry when cache is ttl. Defaults to lookups.defaultTtl in dictionary.yaml."
+        },
+        "filter": {
+          "$ref": "#/$defs/expression",
+          "description": "Restricts the values offered and accepted. row is the candidate row, for example row.countryCode == countryCode."
+        },
+        "dependsOn": {
+          "type": "array",
+          "description": "Fields whose change re-filters this lookup.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "search": {
+          "type": "boolean",
+          "description": "Query by type-ahead instead of loading the whole table.",
+          "default": false
+        }
+      },
+      "if": {
+        "required": [
+          "list"
+        ]
+      },
+      "then": {
+        "properties": {
+          "entity": false,
+          "value": false,
+          "display": false,
+          "cache": false,
+          "ttl": false,
+          "search": false
+        }
+      },
+      "else": {
+        "required": [
+          "entity",
+          "value",
+          "display"
+        ]
+      }
+    },
+    "references": {
+      "type": "object",
+      "description": "A plain foreign key to another entity.",
+      "additionalProperties": false,
+      "required": [
+        "entity"
+      ],
+      "properties": {
+        "entity": {
+          "type": "string",
+          "description": "Referenced entity."
+        },
+        "field": {
+          "type": "string",
+          "description": "Referenced field. Defaults to the entity's primary key."
+        },
+        "onDelete": {
+          "type": "string",
+          "description": "What happens to this row when the referenced row is deleted.",
+          "enum": [
+            "restrict",
+            "cascade",
+            "setNull"
+          ],
+          "default": "restrict"
+        }
+      }
+    },
+    "computed": {
+      "type": "object",
+      "description": "Where a computed field's value comes from. Computed fields are always read-only.",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "database: a computed column. application: computed by the runtime from an expression or a named calculator.",
+          "enum": [
+            "database",
+            "application"
+          ]
+        },
+        "sql": {
+          "type": "object",
+          "description": "SQL per database provider (database source). Every enabled database needs an entry. Columns are referenced by dbName.",
+          "propertyNames": {
+            "enum": [
+              "sqlite",
+              "sqlserver",
+              "postgres"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "stored": {
+          "type": "boolean",
+          "description": "Database source: stored (persisted) rather than virtual.",
+          "default": false
+        },
+        "expression": {
+          "$ref": "#/$defs/expression",
+          "description": "Application source: CEL expression producing the value, for example dec.mul(quantity, unitPrice)."
+        },
+        "calculator": {
+          "type": "string",
+          "description": "Application source: a named calculator declared in calculators.yaml."
+        },
+        "persisted": {
+          "type": "boolean",
+          "description": "Application source: store the value in a column (true) or compute it on read (false).",
+          "default": true
+        }
+      },
+      "if": {
+        "properties": {
+          "source": {
+            "const": "database"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "sql"
+        ],
+        "properties": {
+          "expression": false,
+          "calculator": false,
+          "persisted": false
+        }
+      },
+      "else": {
+        "properties": {
+          "sql": false,
+          "stored": false
+        },
+        "oneOf": [
+          {
+            "required": [
+              "expression"
+            ]
+          },
+          {
+            "required": [
+              "calculator"
+            ]
+          }
+        ]
+      }
+    },
+    "constraints": {
+      "description": "Constraint properties shared by fields and domain types.",
+      "type": "object",
+      "properties": {
+        "maxLength": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum length (string, binary)."
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum length (string)."
+        },
+        "precision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 38,
+          "description": "Total number of digits (decimal)."
+        },
+        "scale": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 38,
+          "description": "Digits after the decimal point (decimal)."
+        },
+        "min": {
+          "type": "number",
+          "description": "Inclusive minimum (integer, long, decimal). Enforced by the API, checked by the client, and a CHECK constraint where the database supports one."
+        },
+        "max": {
+          "type": "number",
+          "description": "Inclusive maximum (integer, long, decimal). Enforced by the API, checked by the client, and a CHECK constraint where the database supports one."
+        },
+        "format": {
+          "type": "string",
+          "description": "Built-in format check.",
+          "enum": [
+            "email",
+            "url",
+            "phone"
+          ]
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Regular expression in RE2 syntax (no lookbehind or backreferences), for example ^09\\d{9}$."
+        },
+        "mask": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Input mask, a UI hint."
+        }
+      }
+    }
+  }
+}

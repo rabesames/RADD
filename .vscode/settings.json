@@ -1,0 +1,21 @@
+// Workspace settings. schema/test/editor.test.ts reads the yaml.schemas mappings, so the editor
+// tests run with exactly what VS Code uses.
+{
+  // Dictionary files to the schema that validates them, by folder. The paths point at the
+  // generated schema/v1 files; edit schema/src and run npm run schema:build.
+  "yaml.schemas": {
+    "./schema/v1/dictionary.schema.json": ["**/dictionary/dictionary.yaml"],
+    "./schema/v1/entity.schema.json": ["**/dictionary/entities/**/*.yaml"],
+    "./schema/v1/domain-type.schema.json": ["**/dictionary/types/**/*.yaml"],
+    "./schema/v1/lookup.schema.json": ["**/dictionary/lookups/**/*.yaml"],
+    "./schema/v1/validators.schema.json": ["**/dictionary/validators.yaml"],
+    "./schema/v1/calculators.schema.json": ["**/dictionary/calculators.yaml"],
+    "./schema/v1/functions.schema.json": ["**/dictionary/functions.yaml"],
+    "./schema/v1/i18n.schema.json": ["**/dictionary/i18n/**/*.yaml"]
+  },
+  "yaml.validate": true,
+  "yaml.completion": true,
+  "yaml.hover": true,
+  // Match .gitattributes (eol=lf) so files are not rewritten on Windows.
+  "files.eol": "\n"
+}

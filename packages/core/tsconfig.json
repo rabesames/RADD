@@ -1,0 +1,6 @@
+// @radd/core: the loader, lint rules and canonical build. Compiles src to dist.
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "include": ["src"]
+}
