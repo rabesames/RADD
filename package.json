@@ -17,7 +17,9 @@
     "clean": "tsc -b --clean",
     "test": "vitest run",
     "check": "biome check .",
-    "format": "biome check --write ."
+    "format": "biome check --write .",
+    "adr:index": "node scripts/adr-index.mjs",
+    "adr:check": "node scripts/check-adrs.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.3",
