@@ -6,8 +6,8 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { type ParseError, parse } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
-import { parse } from "yaml";
 import { build } from "../src/index.js";
 
 const root = fileURLToPath(new URL("../../../conformance/build/", import.meta.url));
@@ -25,9 +25,11 @@ describe("conformance: build vectors", () => {
 
   it.each(vectors)("%s", (name) => {
     const dir = join(root, name);
-    const manifest = parse(readFileSync(join(dir, "vector.yaml"), "utf8")) as {
-      dictionary?: string;
-    };
+    const errors: ParseError[] = [];
+    const manifest = parse(readFileSync(join(dir, "vector.jsonc"), "utf8"), errors, {
+      allowTrailingComma: false,
+    }) as { dictionary?: string };
+    expect(errors, `${name}/vector.jsonc is not valid JSONC`).toEqual([]);
     const result = build(resolve(dir, manifest.dictionary ?? "dictionary"));
     expect(result.diagnostics.filter((d) => d.severity === "error")).toEqual([]);
     const expectedPath = join(dir, "expected.json");

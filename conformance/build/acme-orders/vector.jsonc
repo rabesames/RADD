@@ -1,0 +1,6 @@
+// The example project, built from its own folder rather than a copy, so this vector is also the
+// snapshot that shows every change to the example's canonical JSON in review.
+{
+  "description": "The acme-orders example project. Also the snapshot of the example canonical JSON.",
+  "dictionary": "../../../examples/acme-orders/dictionary"
+}
