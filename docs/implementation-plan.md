@@ -105,13 +105,14 @@ At the end of this stage, a dictionary can be authored in YAML with autocomplete
 1. **Monorepo skeleton:** npm workspaces for TypeScript and one .NET solution, sharing a root README, LICENSE (all rights reserved, alpha) and CI workflow.
 
    ```
-   /schema/v1         JSON Schema for every dictionary file type
+   /schema/src        JSON Schema for every dictionary file type, as JSONC
+   /schema/v1         the published strict JSON, generated from schema/src
    /packages/core     @radd/core: loader, canonical build, hash, lint
    /packages/cli      @radd/cli: the radd command (build and lint only for now)
    /dotnet            RADD.slnx with empty projects, filled in stage 3
    /conformance       test-vector format and first vectors
    /examples/acme-orders/dictionary
-   /scripts           repo tooling (ADR immutability check)
+   /scripts           repo tooling (ADR immutability check, schema build)
    /docs              user docs
    /docs/adr          architecture decision records (ADR-0001.md, ...)
    ```
@@ -261,6 +262,7 @@ Expression checks in this stage use a small CEL lexer that finds function calls;
 - **ICU and HTML interact.** ICU MessageFormat treats `<b>` as a tag element, so messages are parsed with tags ignored; display-hint HTML is checked separately.
 - **Format rendering is a stage 6 risk.** Neither JavaScript's `Intl` nor .NET format strings take ICU patterns directly, so each runtime needs a pattern interpreter for the supported subset. Stage 6 (and the .NET reporting helpers) should start with conformance vectors for formats.
 - **Primary keys and nullability.** A primary key without `required: true` is written as given; stage 3 decides how keys and generated values map to EF and the API.
+- **Comments in JSON.** Rommel decided during the stage that hand-written JSON is JSONC (ADR-0038). The schemas moved to `schema/src/*.schema.jsonc`, and `npm run schema:build` writes the strict `schema/v1` files that editors and lint load; CI fails if they are out of date.
 
 ### Tests and examples
 
@@ -271,6 +273,7 @@ Expression checks in this stage use a small CEL lexer that finds function calls;
 - First conformance vectors: dictionary-in, canonical-JSON-out (`conformance/build/<case>/dictionary/` and `expected.json`, described in `conformance/README.md`), starting with acme-orders and a minimal dictionary.
 - CLI tests: exit codes and `--json` shape for both commands.
 - ADR check tests: every allowed and blocked transition.
+- Schema build tests: comments are dropped, `$id`s are kept, and the committed `schema/v1` matches `schema/src`.
 
 ### Documentation
 

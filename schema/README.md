@@ -15,6 +15,17 @@ JSON Schema (draft 2020-12) for every file in a RADD dictionary folder. Editors,
 
 `v1/common.schema.json` holds the shared definitions (fields' constraints, rules, lookups, computed fields).
 
+## Editing the schemas
+
+The schemas are written in `src/*.schema.jsonc`, JSON with comments that explain the less obvious choices. The files in `v1/` are generated strict JSON, because editors and validators load them by URL; never edit them by hand (ADR-0038).
+
+```sh
+npm run schema:build   # writes v1/ from src/
+npm run schema:check   # fails if v1/ is out of date (CI runs it)
+```
+
+Commit the source and the generated file together. Each generated file keeps its `$id` and gets a `$comment` naming its source.
+
 The schemas check structure only. Cross-file references, naming conventions, required descriptions and translations are checked by `radd lint`; see [docs/lint-rules.md](../docs/lint-rules.md).
 
 The schemas avoid 2020-12 keywords that the VS Code YAML extension does not understand (`unevaluatedProperties`, `$dynamicRef`), so editor validation matches `radd lint`.

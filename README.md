@@ -8,7 +8,8 @@ RADD is a code-level data dictionary framework: one YAML dictionary in the repo 
 
 | Path                   | Contents                                                   |
 | ---------------------- | ---------------------------------------------------------- |
-| `schema/v1`            | JSON Schema for every dictionary file type                 |
+| `schema/src`           | JSON Schema for every dictionary file type (JSONC source)  |
+| `schema/v1`            | The published strict JSON, generated from `schema/src`     |
 | `packages/core`        | `@radd/core`: loader, canonical build, hash and lint       |
 | `packages/cli`         | `@radd/cli`: the `radd` command                            |
 | `dotnet`               | .NET solution (`RADD.*` projects, filled in from stage 3)  |
