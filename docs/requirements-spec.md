@@ -93,7 +93,7 @@ The dictionary is a folder of YAML files validated against a published JSON Sche
 
 ```
 /dictionary
-  dictionary.yaml        # name, version, default locale, enabled databases
+  dictionary.yaml        # name, formatVersion, locales, enabled databases, CEL extensions
   types/                 # reusable domain types (Email, Money, MobileNumber)
   lookups/               # static lookup lists (gender.yaml, yes-no.yaml)
   entities/              # one file per entity (customer.yaml, order.yaml)
@@ -103,7 +103,7 @@ The dictionary is a folder of YAML files validated against a published JSON Sche
   i18n/                  # labels and messages per locale (en.yaml, fil.yaml)
 ```
 
-One file per entity keeps PRs small and avoids merge conflicts. The CLI merges the folder into one canonical document with a content hash, which serves as the dictionary version.
+One file per entity keeps PRs small and avoids merge conflicts. File names carry no meaning: each file names what it defines (`entity: Customer`), so files can be renamed or moved freely. The CLI merges the folder into one canonical document with a content hash, which serves as the dictionary version; `formatVersion` in `dictionary.yaml` only says which RADD format the files are written in. YAML 1.2 is used, without anchors, aliases, merge keys or tags, so every file reads on its own.
 
 ### Logical types
 
@@ -126,7 +126,7 @@ Domain types in `types/` wrap a logical type with defaults and rules (an `Email`
 
 | Property | Applies to | Layers enforcing it |
 | --- | --- | --- |
-| name, table, primaryKey, indexes, unique | entity | DB |
+| name, dbName, apiName, primaryKey, indexes, unique | entity | DB, API |
 | generated: identity (auto-increment) or uuid | primary key field | DB, API, UI |
 | type or domain type | field | DB, API, UI |
 | required (nullability) | field | DB, API, UI |
@@ -142,6 +142,18 @@ Domain types in `types/` wrap a logical type with defaults and rules (an `Email`
 | rules (conditional, cross-field, expression, named validator) | field, entity | API; UI for client-safe rules |
 | relationships (one-to-many, many-to-one, many-to-many) | entity | DB, API |
 | audit (createdAt/By, updatedAt/By), concurrency token, soft delete | entity | DB, API |
+
+### Names
+
+Every entity and field has three names:
+
+- **Logical name:** the key in the YAML. Entities are PascalCase and singular (`OrderLine`), fields lowerCamelCase (`countryCode`). CEL expressions, message keys and generated code use it.
+- **Database name (`dbName`):** the table or column. Defaults to TitleCase of the logical name (`OrderLine`, `CountryCode`), never pluralized.
+- **API name (`apiName`):** the JSON property and `/_radd` route segment. Defaults to camelCase (`orderLine`, `countryCode`).
+
+Both can be overridden, for example to match an existing database (`dbName: Countries`, `dbName: IsoCode`); the canonical document always states both. Fields keep their declared order, which sets column, property and default form order.
+
+Defaults are literals of the field's type (`default: 0`, `default: Open`); a computed default is written `default: { expression: "ctx.now" }`.
 
 ### Display and edit metadata
 
@@ -217,7 +229,7 @@ id:   { type: long, generated: { kind: identity, seed: 1000, increment: 1 } }
 ```yaml
 # entities/customer.yaml
 entity: Customer
-table: customers
+dbName: Customers
 primaryKey: id
 fields:
   id:          { type: guid, generated: uuid }
@@ -261,7 +273,7 @@ lineTotal:  { type: decimal, precision: 14, scale: 2,
               computed: { source: application, expression: "dec.mul(quantity, unitPrice)", persisted: true } }
 searchName: { type: string, maxLength: 240,
               computed: { source: database, stored: true,
-                          sql: { sqlite: "lower(name)", sqlserver: "LOWER([name])" } } }
+                          sql: { sqlite: "lower(Name)", sqlserver: "LOWER([Name])" } } }
 ```
 
 ## Validation model
@@ -286,9 +298,9 @@ Conditional rules can switch `required`, `readOnly` and `visible` (a UI hint) on
 
 Conditions, cross-field rules and application-computed fields are written in CEL (Common Expression Language). It reads like code, is type-checked against declared field types at lint time, always terminates, and has an official conformance test corpus that every runtime can be measured against. JSONLogic was rejected for its loose semantics, lack of type checking and small set of built-in functions.
 
-- **Variables:** the record's fields by name (`creditLimit > 1000000.0`); `row` for the candidate row in a lookup filter; `ctx` for server-supplied values such as `ctx.today` and `ctx.locale`, so client and server never disagree about the current time.
+- **Variables:** the record's fields by name (`creditLimit > 1000000.0`); `row` for the candidate row in a lookup filter; `ctx` for server-supplied values such as `ctx.today`, `ctx.now` and `ctx.locale`, so client and server never disagree about the current time.
 - **Declared subset:** `dictionary.yaml` lists the CEL extensions allowed (for example strings). Anything outside the subset fails `radd lint`.
-- **Custom functions:** `functions.yaml` declares project-specific CEL functions (name, signature, description, client-safe or server-only). Each runtime implements them as a CEL extension, and the project's conformance vectors cover them. The framework ships a built-in set: `isBlank`, and decimal-safe `dec.add`, `dec.sub`, `dec.mul`, `dec.eq`, `dec.round`.
+- **Custom functions:** `functions.yaml` declares project-specific CEL functions (name, signature, description, client-safe or server-only). Each runtime implements them as a CEL extension, and the project's conformance vectors cover them. The framework ships a built-in set: `isBlank`, `newGuid`, and decimal-safe `dec.add`, `dec.sub`, `dec.mul`, `dec.eq`, `dec.round`.
 - **Decimals:** decimal fields can be compared directly, but arithmetic and equality on them must use the `dec.*` functions; lint warns on raw arithmetic over decimal fields.
 - **Regex:** CEL uses RE2 syntax (no lookbehind or backreferences); lint validates every pattern.
 - **Escape hatch:** anything that needs the database, business calendars, aggregates across records or complex decision logic is a named server validator or calculator, not an expression.
@@ -330,7 +342,7 @@ Messages are resolved in the request's locale; `code` and `params` are always re
 
 ## Lookups
 
-Every lookup maps a stored value to a display value (M to Male, T to True, 42 to "Metro Manila"). Three sources are supported, and any of them can depend on another field.
+Every lookup maps a stored value to a display value (M to Male, T to True, 42 to "Metro Manila"). Two sources are supported, static lists and reference tables, and either can depend on another field.
 
 ### Static lists
 
@@ -480,8 +492,9 @@ api:       { stack: dotnet, framework: aspnetcore, orm: efcore, path: ./api }
 databases:
   - { name: local, provider: sqlite, connection: env:RADD_LOCAL_DB }
   - { name: staging, provider: sqlite, connection: env:RADD_STAGING_DB }
-locales: { default: en, supported: [en, fil] }
 ```
+
+Locales are declared by the dictionary (`locales` in `dictionary.yaml`), not by the project config.
 
 Connection strings are always references to environment variables, never literal values, so the config file can be committed safely.
 
