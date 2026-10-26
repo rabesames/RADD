@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { lint, RULES } from "../src/index.js";
 import { BASE, lineOf, merged, writeDictionary } from "./helpers.js";
@@ -524,5 +526,19 @@ describe.each(Object.entries(CASES))("%s", (code, c) => {
     const d = result.diagnostics.find((x) => x.code === code);
     expect(d?.rule).toBe(RULES[code as keyof typeof RULES].rule);
     expect(d?.severity).toBe(RULES[code as keyof typeof RULES].severity);
+  });
+});
+
+describe("docs/lint-rules.md", () => {
+  const doc = readFileSync(
+    fileURLToPath(new URL("../../../docs/lint-rules.md", import.meta.url)),
+    "utf8",
+  );
+
+  it.each(Object.entries(RULES))("documents %s", (code, info) => {
+    expect(doc).toContain(`### ${code} ${info.rule}`);
+    expect(doc).toContain(
+      `| [${code}](#${code.toLowerCase()}-${info.rule}) | ${info.rule} | ${info.severity} |`,
+    );
   });
 });

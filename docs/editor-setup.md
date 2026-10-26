@@ -41,10 +41,10 @@ The tests in `schema/test/editor.test.ts` run the same language server as the ex
 
 The schema checks one file at a time. These need `radd lint`:
 
-- a lookup, entity, domain type, field, validator or function that does not exist (RADD201 to RADD207)
+- references that do not exist, types that do not fit, formats and generated keys (RADD201 to RADD214)
 - naming conventions and file names (RADD301 to RADD305)
 - missing descriptions (RADD401)
-- missing or unused translations (RADD501 to RADD505)
-- expression, pattern and computed-SQL checks (RADD701 to RADD703)
+- missing or unused translations, and display-hint HTML (RADD501 to RADD506)
+- expression, pattern, computed-SQL and ICU format checks (RADD701 to RADD704)
 
 Run it from the terminal (`npx radd lint dictionary`). Its `file:line:column` output is clickable in the VS Code terminal.
