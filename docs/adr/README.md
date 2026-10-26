@@ -47,4 +47,5 @@ Every architectural or Rommel-level decision in RADD is recorded here, in the sa
 | [ADR-0035](ADR-0035.md) | Foreign keys, relationships and lookup defaults | Accepted | 2026-10-26 |  |
 | [ADR-0036](ADR-0036.md) | Lexical CEL checks in lint until the CEL library is chosen | Accepted | 2026-10-26 |  |
 | [ADR-0037](ADR-0037.md) | Primary keys can be generated as identity or uuid | Accepted | 2026-10-26 |  |
+| [ADR-0038](ADR-0038.md) | Hand-written JSON is JSONC; JSON Schemas are generated from JSONC sources | Accepted | 2026-10-27 |  |
 <!-- adr-index:end -->
