@@ -1,12 +1,17 @@
+// Biome formats and lints the TypeScript, JavaScript and JSON(C) files.
 {
   "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+  // Skip whatever .gitignore skips (node_modules, dist, .radd).
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "includes": [
       "**",
+      // Markdown and YAML are written by hand: Biome reflowed spec tables and rewrote
+      // dictionary flow mappings, so it stays out of them.
       "!**/*.md",
       "!**/*.yaml",
       "!**/dist",
+      // Generated output, compared byte for byte; formatting it would break the comparison.
       "!conformance/**/expected.json",
       "!**/__snapshots__"
     ]
