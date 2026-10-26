@@ -29,5 +29,9 @@ npm test
 
 ## Documentation
 
+- [Authoring a dictionary](docs/authoring.md), walking through the example
+- [Lint rule reference](docs/lint-rules.md)
+- [Editor setup for VS Code](docs/editor-setup.md)
+- [Conformance suite](conformance/README.md)
 - [Requirements spec](docs/requirements-spec.md) and [implementation plan](docs/implementation-plan.md)
 - [Architecture decision records](docs/adr/README.md)
