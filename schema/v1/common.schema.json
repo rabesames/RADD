@@ -143,7 +143,11 @@
       },
       "else": {
         "required": ["when"],
-        "anyOf": [{ "required": ["required"] }, { "required": ["readOnly"] }, { "required": ["visible"] }]
+        "anyOf": [
+          { "required": ["required"] },
+          { "required": ["readOnly"] },
+          { "required": ["visible"] }
+        ]
       }
     },
     "rules": {
@@ -157,7 +161,10 @@
       "additionalProperties": false,
       "required": ["name"],
       "properties": {
-        "name": { "type": "string", "description": "Validator name as declared in validators.yaml." },
+        "name": {
+          "type": "string",
+          "description": "Validator name as declared in validators.yaml."
+        },
         "params": {
           "type": "object",
           "description": "Parameter values, by parameter name."
