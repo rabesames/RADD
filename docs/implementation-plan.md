@@ -83,7 +83,7 @@ The order puts the dictionary format first and the risky technical bets (CEL lib
 
 | # | Stage | Outcome | Detail | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Repo foundation and dictionary format | A dictionary can be written in YAML with editor help, linted, and built into canonical JSON with a stable hash | Detailed | Proposed |
+| 1 | Repo foundation and dictionary format | A dictionary can be written in YAML with editor help, linted, and built into canonical JSON with a stable hash | Detailed | In review |
 | 2 | Spikes | Evidence-based picks for the CEL libraries, the EF diff approach and the source-generator approach | Detailed | Not started |
 | 3 | .NET runtime: model and EF Core | Generated entity classes and an EF model configured from the dictionary, running on SQLite | Detailed | Not started |
 | 4 | API validation pipeline | All rule kinds, severities, named validators and ProblemDetails results, with structured logging | Placeholder | Not started |
@@ -98,7 +98,7 @@ The order puts the dictionary format first and the risky technical bets (CEL lib
 
 At the end of this stage, a dictionary can be authored in YAML with autocomplete and inline errors in the editor, linted with clear messages, and built into canonical JSON with a hash that only changes when meaning changes.
 
-> **Proposal status:** approved by Rommel on 2026-10-26, with the naming change in decision 4 below.
+> **Proposal status:** approved by Rommel on 2026-10-26, with the naming change in decision 4 below, and extended the same day with display and edit metadata and generated primary keys (spec sections of those names). Built on branch `stage-1-foundation`; the design below is updated to what was built.
 
 ### Scope
 
@@ -157,10 +157,10 @@ At the end of this stage, a dictionary can be authored in YAML with autocomplete
 
 - Folders under `entities/`, `types/` and `lookups/` may be nested; file names carry no meaning (the name comes from the `entity:`, `domainType:` or `lookup:` key), so renaming or moving a file never changes the hash.
 - YAML anchors, aliases, merge keys and custom tags are rejected: every file must read on its own, and domain types are the reuse mechanism.
-- Field properties: `type` or `domain` (not both), `description`, `tags`, `required`, `maxLength`, `minLength`, `precision`, `scale`, `min`, `max`, `default`, `readOnly` (`never`, `always`, `onUpdate`), `format` (`email`, `url`, `phone`), `pattern` (RE2), `mask`, `lookup`, `references`, `rules`, `validators`, `computed`, `dbName`, `apiName`, `renamedFrom`.
+- Field properties: `type` or `domain` (not both), `description`, `tags`, `required`, `maxLength`, `minLength`, `precision`, `scale`, `min`, `max`, `default`, `readOnly` (`never`, `always`, `onUpdate`), `format` (`email`, `url`, `phone`), `pattern` (RE2), `mask`, `displayFormat`, `editFormat`, `displayLabel`/`shortLabel`/`displayHint`/`placeholder` (key overrides), `generated` (primary keys), `lookup`, `references`, `rules`, `validators`, `computed`, `dbName`, `apiName`, `renamedFrom`. Domain types may also carry `displayFormat` and `editFormat`.
 - Lookup on a field: `{ list: gender }` or `{ entity, value, display, cache, ttl, filter, dependsOn, search }`. A reference-table lookup implies a foreign key. `cache` defaults to `ttl`, because reference-table data changes at runtime and `static` would serve stale values.
 - Plain foreign keys (OrderLine.orderId) use `references: { entity: Order, field: id, onDelete: restrict | cascade | setNull }`.
-- Relationships give navigation names: `relationships: { lines: { oneToMany: OrderLine, foreignKey: orderId } }`, `{ manyToOne: Customer, foreignKey: customerId }`, `{ manyToMany: Tag, through: OrderTag }`.
+- Relationships give navigation names: `relationships: { lines: { kind: oneToMany, entity: OrderLine, foreignKey: orderId } }`, `{ kind: manyToOne, entity: Customer, foreignKey: customerId }`, `{ kind: manyToMany, entity: Tag, through: OrderTag }`. (Changed during the build from `{ oneToMany: OrderLine }`, so editors can autocomplete `kind`; ADR-0026.)
 - Rules: `{ when, required | readOnly | visible, severity, code, message }` for conditional rules; `{ when?, expression, severity, code, message }` for cross-field and expression rules. Named validators go under `validators: [{ name, params, severity, code, message }]` on a field or entity.
 - `audit`, `softDelete` and `concurrencyToken` (the name of a declared field) are recorded as given. Turning `audit` and `softDelete` into concrete columns is decided in stage 3 alongside EF.
 
@@ -170,7 +170,7 @@ At the end of this stage, a dictionary can be authored in YAML with autocomplete
 - **Defaults are made explicit** before hashing (`required: false`, `readOnly: never`, `cache: ttl`, index names, `dbName` and `apiName` for every entity and field, `primaryKey` as an array), so writing a default out or leaving it implicit gives the same hash.
 - **Normalization:** durations become seconds (`10m` → `ttlSeconds: 600`); field-level `unique: true` becomes an entity index identical to an explicit unique index; set-like arrays (`tags`, `dependsOn`, `extensions`, supported locales) are sorted and de-duplicated; every other array keeps its order.
 - **Domain types are expanded** into each field (field overrides win, rules are concatenated domain-first) while `domain: Email` is kept for reference.
-- **Message keys are derived and resolved at build.** Labels default to `customer.name.label` (entity prefix is the lowerCamel entity name). Each constraint's message is resolved to one key by trying the field key (`customer.name.maxLength`), then the domain-type key (`email.maxLength`), then the framework default (`radd.maxLength`), and taking the first that exists in the default locale. A rule's `code` defaults to its `message` key, or to `<entity>.<field>.<validatorName>` for validators, matching the spec's result example.
+- **Message keys are derived and resolved at build.** Text keys default to `customer.displayLabel`, `customer.name.displayLabel`, and optional `shortLabel`, `displayHint` and `placeholder` (entity prefix is the lowerCamel entity name); ADR-0030. Each constraint's message is resolved to one key by trying the field key (`customer.name.maxLength`), then the domain-type key (`email.maxLength`), then the framework default (`radd.maxLength`), and taking the first that exists in the default locale. A rule's `code` defaults to its `message` key, or to `<entity>.<field>.<validatorName>` for validators, matching the spec's result example.
 - **Framework messages:** `@radd/core` ships `radd.*` messages for `en`; a project's i18n overrides them. Other locales supply their own `radd.*` text or fall back with a warning. The messages that end up in the canonical document are part of the hash.
 - **Hash:** SHA-256 over the RFC 8785 JSON Canonicalization Scheme (JCS) serialization of the document without its `version` property, written as `version: "sha256:<64 hex>"`. JCS is a published standard, so a C# or Java implementation can reproduce the hash from the conformance vectors.
 - **Output:** `radd build <dir>` writes pretty-printed, key-sorted JSON (two-space indent, LF, trailing newline) to `--out`, default `<dir>/../.radd/dictionary.json` (`.radd/` is git-ignored). The build runs lint first and refuses to write if there are errors.
@@ -196,7 +196,10 @@ Codes are stable and never reused. Every diagnostic has `code`, `rule`, `severit
 | RADD208 | extension-not-enabled | error | A CEL expression uses a function from an extension not listed in `dictionary.yaml` |
 | RADD209 | type-with-domain | error | A field sets both `type` and `domain` (a domain's base type cannot be overridden) |
 | RADD210 | lookup-type-mismatch | error | A static lookup's `valueType`, or a referenced field's type, differs from the field's type |
-| RADD211 | invalid-constraint | error | A constraint that does not fit the type (`maxLength` on an integer, `scale` > `precision`, `min` > `max`) |
+| RADD211 | invalid-constraint | error | A constraint that does not fit the type (`maxLength` on an integer, `scale` > `precision`, `min` > `max`, `min` or `max` outside the type, precision or scale) |
+| RADD212 | format-type-mismatch | error | A display or edit format kind that does not suit the field type, edit decimals beyond the scale, or a bad currency field |
+| RADD213 | invalid-generated | error | `generated` on a non-key field, identity on a non-integer, uuid on a non-guid, two identities, or with a default |
+| RADD214 | generated-option-ignored | warning | An identity seed or increment that SQLite would ignore |
 | RADD301 | entity-name | error | Entity or domain type not PascalCase |
 | RADD302 | field-name | error | Field or relationship not lowerCamelCase |
 | RADD303 | physical-name | error | A `dbName` that is not a plain SQL identifier, or an `apiName` that is not a plain identifier; two fields of an entity with the same `dbName` or `apiName` (ignoring case), or two entities with the same `dbName` or `apiName` |
@@ -208,10 +211,12 @@ Codes are stable and never reused. Every diagnostic has `code`, `rule`, `severit
 | RADD503 | unused-key | warning | An i18n key nothing refers to (derived optional keys such as `.help` and `.placeholder` count as used) |
 | RADD504 | invalid-message | error | Message text is not valid ICU MessageFormat |
 | RADD505 | unknown-locale | error | An i18n file for a locale not in `locales.supported`, or a supported locale with no file |
+| RADD506 | invalid-hint-html | error | A display hint with HTML outside the allowlist |
 | RADD601 | renamed-from-conflict | error | `renamedFrom` names an existing entity or field, equals its own name, or two items claim the same old name |
 | RADD701 | expression-syntax | error | Lexical errors in a CEL expression (unterminated string, unbalanced brackets) |
 | RADD702 | missing-computed-sql | error | A database-computed field has no SQL for an enabled database |
 | RADD703 | invalid-pattern | error | `pattern` is not valid RE2 |
+| RADD704 | invalid-format-pattern | error | A display or edit format whose ICU number or date pattern, or mask, is invalid |
 
 Expression checks in this stage use a small CEL lexer that finds function calls; full parsing, identifier checks, type checking and the decimal-arithmetic warning arrive with the stage 2 library.
 
@@ -247,6 +252,15 @@ Expression checks in this stage use a small CEL lexer that finds function calls;
 7. **CODEOWNERS.** Keep `CODEOWNERS` for review requests and ownership, make the ADR check a required status check on `main`, and treat Rommel's merge as the approval (an author cannot approve their own pull request).
 8. **New stage 1 ADRs** are Accepted, like the backfill.
 9. Wording: the spec's Lookups section says "three sources" but lists two (static lists and reference tables) plus dependency; fixed in the spec update.
+
+#### What stage 1 taught us
+
+- **Tooling surprises.** Biome 2.6 formats Markdown and YAML too, and rewrote the spec's tables and the dictionary's flow mappings; both are now excluded. TypeScript 7's `tsc -b` works with project references.
+- **Editor support can be tested.** `yaml-language-server`, the engine of the VS Code YAML extension, runs headless in the tests, so editor validation, completion and hover are checked in CI rather than by hand.
+- **Lint must not cascade.** Files with schema errors are left out of semantic checks, and unused-key warnings are suppressed while any file fails; otherwise one typo produced dozens of follow-on warnings.
+- **ICU and HTML interact.** ICU MessageFormat treats `<b>` as a tag element, so messages are parsed with tags ignored; display-hint HTML is checked separately.
+- **Format rendering is a stage 6 risk.** Neither JavaScript's `Intl` nor .NET format strings take ICU patterns directly, so each runtime needs a pattern interpreter for the supported subset. Stage 6 (and the .NET reporting helpers) should start with conformance vectors for formats.
+- **Primary keys and nullability.** A primary key without `required: true` is written as given; stage 3 decides how keys and generated values map to EF and the API.
 
 ### Tests and examples
 
