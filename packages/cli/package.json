@@ -1,0 +1,17 @@
+{
+  "name": "@radd/cli",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "The radd command.",
+  "type": "module",
+  "bin": {
+    "radd": "./bin/radd.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@radd/core": "0.1.0-alpha.0"
+  }
+}

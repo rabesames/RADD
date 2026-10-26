@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RADD.AspNetCore/RADD.AspNetCore.csproj" />
+    <Project Path="src/RADD.Core/RADD.Core.csproj" />
+    <Project Path="src/RADD.EntityFrameworkCore/RADD.EntityFrameworkCore.csproj" />
+    <Project Path="src/RADD.Generators/RADD.Generators.csproj" />
+  </Folder>
+</Solution>

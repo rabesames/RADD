@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Roslyn source generators must target netstandard2.0. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>RADD.Generators</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+</Project>
