@@ -369,7 +369,6 @@ class Linter {
     const at = (...p: PathSegment[]): Where => ({ file: e.file, path: p });
     const fields = e.data.fields;
     const fieldNames = Object.keys(fields);
-    const ek = camelCase(e.name);
     const fieldRef = (name: string, where: Where, what: string) => {
       if (!(name in fields))
         this.report(
