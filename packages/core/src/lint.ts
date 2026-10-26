@@ -929,14 +929,28 @@ class Linter {
       }
       if (locale === defaultLocale || !dict.data.locales.supported.includes(locale)) continue;
       const file = this.loaded.files.find((f) => f.kind === "i18n" && f.locale === locale);
+      if (!file) continue;
+      const missingFramework: string[] = [];
       for (const key of this.defaultMessages.keys()) {
-        if (!messages.has(key) && file) {
-          this.report(
-            "RADD502",
-            { file, path: [] },
-            `Key '${key}' is missing in '${locale}'; the '${defaultLocale}' text will be used.`,
-          );
+        if (messages.has(key)) continue;
+        if (key.startsWith("radd.")) {
+          missingFramework.push(key);
+          continue;
         }
+        this.report(
+          "RADD502",
+          { file, path: [] },
+          `Key '${key}' is missing in '${locale}'; the '${defaultLocale}' text will be used.`,
+        );
+      }
+      // Framework messages are reported once per locale rather than once per key.
+      if (missingFramework.length > 0) {
+        this.report(
+          "RADD502",
+          { file, path: [] },
+          `${missingFramework.length} framework message${missingFramework.length === 1 ? " is" : "s are"} missing in '${locale}'; the '${defaultLocale}' text will be used: ${missingFramework.join(", ")}.`,
+          `Add ${locale} translations for the radd.* keys to i18n/${locale}.yaml.`,
+        );
       }
     }
   }
