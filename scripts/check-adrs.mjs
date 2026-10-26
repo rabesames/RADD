@@ -15,7 +15,11 @@ import { checkImmutability, checkIndex } from "./adr-rules.mjs";
 const DIR = "docs/adr";
 
 function git(/** @type {string[]} */ ...args) {
-  return execFileSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  return execFileSync("git", args, {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 }
 
 /** @returns {Map<string, string>} */
