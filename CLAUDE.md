@@ -24,6 +24,7 @@ RADD is a code-level data dictionary framework: one YAML dictionary in the repo 
 
 ## Conventions
 
+- JSON: hand-written JSON is JSONC with comments (`.jsonc` unless the tool accepts comments in `.json`). JSON Schemas are edited in `schema/src/*.schema.jsonc`; never hand-edit the generated strict `schema/v1/*.schema.json`. Strict JSON only for package.json, lockfiles, generated output and API payloads.
 - Names: framework RADD; CLI `radd`; NuGet `RADD.*`; npm `@radd/*`; endpoints `/_radd/*`; headers `RADD-Version`, `RADD-Acknowledge`; message keys `radd.*`.
 - Versions: latest LTS — .NET 10 / EF Core 10, Node.js 26 LTS (24 LTS acceptable until Oct 28, 2026).
 - CI: GitHub Actions. Every stage's tests run in CI.
