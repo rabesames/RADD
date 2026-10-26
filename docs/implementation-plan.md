@@ -121,7 +121,7 @@ At the end of this stage, a dictionary can be authored in YAML with autocomplete
 5. **CLI:** `radd build` and `radd lint`, both with `--json` output and non-zero exit codes on failure.
 6. **Example dictionary:** Customer, Country, Province, Order and OrderLine, a gender static list, a dependent lookup, one conditional rule, one named validator and one computed field, in English and Filipino.
 
-**ADRs for decisions already made:** stage 1 also sets up `/docs/adr`, the index, the template and the CI immutability check, and backfills one ADR per decision already agreed in the spec: YAML dictionary format; runtime interpretation with generated entity classes; headless client with TTL-cached metadata; CEL with declared subset, custom functions and named server validators; computed fields (database and application); migration scripts by diffing against a live database; Node CLI core with stack plugins; structured logging and level usage; one dictionary per system; no generic CRUD endpoints; no hot reload; read-only payload handling deferred; warning UX left to the component layer; licensing; naming (RADD, `radd`, `RADD.*`, `@radd/*`); latest LTS versions; GitHub Actions for CI; and the ADR standard itself. Rommel can harden these at the stage 1 gate.
+**ADRs for decisions already made:** stage 1 also sets up `/docs/adr`, the index, the template and the CI immutability check, and backfills one ADR per decision already agreed in the spec: YAML dictionary format; runtime interpretation with generated entity classes; headless client with TTL-cached metadata; CEL with declared subset, custom functions and named server validators; computed fields (database and application); display and edit metadata (labels, HTML hints, ICU display and edit formats, numeric min and max); generated primary keys (identity and uuid); migration scripts by diffing against a live database; Node CLI core with stack plugins; structured logging and level usage; one dictionary per system; no generic CRUD endpoints; no hot reload; read-only payload handling deferred; warning UX left to the component layer; licensing; naming (RADD, `radd`, `RADD.*`, `@radd/*`); latest LTS versions; GitHub Actions for CI; and the ADR standard itself. Rommel can harden these at the stage 1 gate.
 
 ### Proposed design
 
@@ -333,7 +333,7 @@ At the end of this stage, an ASP.NET Core app gets its entity classes generated 
 
 1. **RADD.Core:** a C# model of the canonical dictionary, loaded from an embedded resource, with its version hash. Startup fails fast on an invalid dictionary or a declared validator, calculator or function with no registered implementation (Critical log entry).
 2. **RADD.Generators:** partial POCOs (properties and navigation properties only, no attributes) and the strongly typed key catalog (`Radd.Customer.Email`), using the path chosen in spike D.
-3. **RADD.EntityFrameworkCore:** `modelBuilder.ApplyDataDictionary()` configures tables, keys, required, max length, precision and scale, defaults, indexes and unique constraints, relationships and foreign keys, check constraints for static lookups, concurrency tokens, soft-delete query filters, audit columns, and database-computed columns (`HasComputedColumnSql`). Application-computed, non-persisted fields are ignored by EF.
+3. **RADD.EntityFrameworkCore:** `modelBuilder.ApplyDataDictionary()` configures tables, keys and key generation (identity with seed and increment, uuid), required, max length, precision and scale, defaults, indexes and unique constraints, relationships and foreign keys, check constraints for static lookups, concurrency tokens, soft-delete query filters, audit columns, and database-computed columns (`HasComputedColumnSql`). Application-computed, non-persisted fields are ignored by EF.
 4. **Example API:** `examples/acme-orders/api`, a minimal ASP.NET Core app on SQLite using the three packages, with one hand-written partial class adding behavior to a generated entity.
 
 ### Tests and examples
@@ -368,7 +368,7 @@ Each is detailed after the stage before it is validated.
 
 - **Stage 4, API validation pipeline:** endpoint filter and SaveChanges interceptor, all rule kinds and severities, warning acknowledgment, named validators and calculators, ProblemDetails results, structured logging with the level table.
 - **Stage 5, metadata endpoints and localization:** `/_radd/metadata`, `/_radd/lookups`, `/_radd/validate`, ETags and `RADD-Version`, lookup cache modes and filters, ICU messages and locale fallback.
-- **Stage 6, TypeScript client:** loading and TTL cache, field metadata, conditional state, client-side validation, lookups, logger interface, optional type generation.
+- **Stage 6, TypeScript client:** loading and TTL cache, field metadata, conditional state, client-side validation, display and edit formatting (`radd.format`, `radd.parse`) and hint sanitizing, lookups, logger interface, optional type generation.
 - **Stage 7, migration script generation:** `radd db diff` with change report, data checks and destructive-change gating, built on spike C.
 - **Stage 8, CLI and initializer:** plugin protocol, the .NET plugin, `radd init` from config or prompts, `radd gen`, `radd validate`, `radd doctor`.
 - **Stage 9, AI layer:** MCP server, semantic `radd diff`, `radd docs` with ERDs, finished AGENTS.md, PR review workflow.

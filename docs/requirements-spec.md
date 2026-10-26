@@ -127,17 +127,90 @@ Domain types in `types/` wrap a logical type with defaults and rules (an `Email`
 | Property | Applies to | Layers enforcing it |
 | --- | --- | --- |
 | name, table, primaryKey, indexes, unique | entity | DB |
+| generated: identity (auto-increment) or uuid | primary key field | DB, API, UI |
 | type or domain type | field | DB, API, UI |
 | required (nullability) | field | DB, API, UI |
-| maxLength, minLength, precision, scale, min, max | field | DB (where native), API, UI |
+| maxLength, minLength, precision, scale | field | DB (where native), API, UI |
+| min, max (numeric fields: integer, long, decimal; inclusive) | field | DB (CHECK constraint where supported), API, UI |
 | default (literal or expression) | field | DB, API, UI |
 | readOnly: always, onUpdate (computed fields are always read-only) | field | API, UI |
-| label, shortLabel, help, placeholder | field (via i18n keys) | UI |
+| displayLabel, shortLabel, displayHint, placeholder | field (text lives in i18n) | UI, reports |
+| displayFormat (how a value is shown) | field or domain type | UI, reports |
+| editFormat (how a value looks while being edited) | field or domain type | UI |
 | format and mask (email, url, phone, regex) | field | API, UI |
 | lookup (static list, reference table, dependency) | field | DB (FK or check), API, UI |
 | rules (conditional, cross-field, expression, named validator) | field, entity | API; UI for client-safe rules |
 | relationships (one-to-many, many-to-one, many-to-many) | entity | DB, API |
 | audit (createdAt/By, updatedAt/By), concurrency token, soft delete | entity | DB, API |
+
+### Display and edit metadata
+
+Each field carries the metadata a UI or report needs to present it without hard-coding anything. All of it is presentation only: the API always stores and returns raw values, never formatted strings.
+
+| Property | Purpose | Example |
+| --- | --- | --- |
+| displayLabel | The field's name as shown to people in forms, grids and reports | "Credit limit" |
+| shortLabel | Optional shorter label for narrow columns | "Limit" |
+| displayHint | Freeform HTML shown when hovering over or focusing the field | `Maximum credit, in pesos. <b>Requires approval</b> above 1,000,000.` |
+| placeholder | Text shown in an empty input | "0.00" |
+| displayFormat | How a stored value is rendered for reading | `{ kind: number, pattern: "#,##0.00" }` shows 1234567.5 as 1,234,567.50 |
+| editFormat | How the value looks and is entered while editing | `{ kind: number, decimals: 2, grouping: false }` shows 1234567.50 in the input |
+| min, max | Inclusive bounds for numeric fields | `min: 0, max: 10000000` |
+
+**Text and localization.** `displayLabel`, `shortLabel`, `displayHint` and `placeholder` are user-facing text, so they live in `i18n/` like every other message, under keys derived from the path (`customer.creditLimit.displayLabel`, `customer.creditLimit.displayHint`). A field can point to a different key when two fields share a label.
+
+**Display hint HTML.** The hint is stored as HTML, so it is sanitized: lint rejects anything outside an allowlist (`b`, `strong`, `i`, `em`, `br`, `p`, `ul`, `ol`, `li`, `code`, and `a` with an `https` link), and the client sanitizes again before handing it to a UI. Scripts, styles, event handlers and images are never allowed. The client also exposes a plain-text version for reports, tooltips that cannot render HTML, and screen readers.
+
+**Display format.** Formats use ICU patterns, so the same definition renders identically in TypeScript (`Intl`), .NET and future runtimes, and the conformance suite checks them.
+
+| kind | Settings | Example |
+| --- | --- | --- |
+| number | `pattern` (ICU number pattern), optional `symbols` | `"#,##0.00"`: two decimals with grouping |
+| percent | `pattern` | `"0.0%"` |
+| currency | `pattern`, `currency` (ISO 4217 code or a field holding one) | `"¤#,##0.00"`, `currency: PHP` |
+| date, time, datetime | `pattern` (ICU date pattern) or a named style (`short`, `medium`, `long`) | `"yyyy-MM-dd"`, `medium` |
+| boolean | `true` and `false` label keys | `Yes` / `No` |
+| text | `case` (`upper`, `lower`, `title`) or a `mask` for display | `upper` |
+
+By default the grouping and decimal symbols follow the viewer's locale, so `"#,##0.00"` shows 1,234,567.50 in English and 1.234.567,50 in German. When a format must look the same everywhere, `symbols: { group: ",", decimal: "." }` fixes them regardless of locale. A domain type can define a format once (for example `Money`) and every field of that type inherits it.
+
+**Edit format.** Controls what the user sees and types while editing, and how input is parsed back to a raw value.
+
+| kind | Settings | Example |
+| --- | --- | --- |
+| number | `decimals`, `grouping` (show separators while typing), `allowNegative` | `{ decimals: 2, grouping: false, allowNegative: false }` |
+| mask | `pattern` where `0` is a digit, `A` a letter and `*` any character; literals are shown but not stored unless `storeLiterals: true` | `"0000-000-0000"` for a mobile number |
+| date, time, datetime | `pattern` for typed input | `"yyyy-MM-dd"` |
+| text | `case` applied as the user types, `trim` | `{ case: upper, trim: true }` |
+
+The client provides `radd.format(entity, field, value)` and `radd.parse(entity, field, input)` so every UI and report uses the same rules; .NET offers the same for server-side reports and exports.
+
+**Min and max.** For integer, long and decimal fields, `min` and `max` are inclusive bounds. They are enforced by the API, checked by the client, become a CHECK constraint in databases that support one, and are available to UIs for spinners and sliders. Lint checks that `min` is not above `max` and that both fit the field's precision and scale. Messages use the framework defaults `radd.min` and `radd.max`, overridable per field.
+
+### Primary keys and generated values
+
+A primary key field can have its value generated instead of supplied, with `generated`.
+
+| generated | Field types | Who generates it | SQLite / SQL Server / Postgres | EF Core |
+| --- | --- | --- | --- | --- |
+| identity | integer, long | The database, on insert (auto-increment) | `INTEGER PRIMARY KEY` / `IDENTITY(seed, increment)` / `GENERATED BY DEFAULT AS IDENTITY` | `ValueGeneratedOnAdd()`, plus the provider's identity configuration for seed and increment |
+| uuid | guid | The application, before insert | Plain column of the guid type | `ValueGeneratedOnAdd()` with EF's GUID generator (sequential GUIDs on SQL Server) |
+| (omitted) | any | The caller supplies the value | Plain column | `ValueGeneratedNever()` |
+
+```yaml
+# entities/province.yaml (fields)
+id:   { type: integer, generated: identity }          # 1, 2, 3, ...
+code: { type: string, maxLength: 10, required: true }
+
+# options for identity
+id:   { type: long, generated: { kind: identity, seed: 1000, increment: 1 } }
+```
+
+- **Read-only by definition.** A generated key is always read-only: UIs show it but never offer it for editing, it is left out of create payloads, and a value sent by a client follows the reject-or-ignore setting for read-only fields. The API returns the generated value after the insert.
+- **Seed and increment** apply to databases that support them (SQL Server, Postgres). SQLite always starts at 1 and increments by 1, so lint warns when an enabled SQLite database would ignore a custom seed or increment.
+- **SQLite `AUTOINCREMENT`.** By default SQLite may reuse the highest key after rows are deleted; `generated: { kind: identity, noReuse: true }` emits `AUTOINCREMENT` to prevent that, at a small write cost.
+- **Lint rules:** `identity` only on integer or long fields that are the primary key, at most one per entity; `uuid` only on guid fields.
+- **Migrations:** adding or removing identity on an existing column needs a table rebuild in most databases, so `radd db diff` classifies it as destructive.
 
 ### Example
 
@@ -147,7 +220,7 @@ entity: Customer
 table: customers
 primaryKey: id
 fields:
-  id:          { type: guid, readOnly: always, default: newGuid() }
+  id:          { type: guid, generated: uuid }
   name:        { type: string, maxLength: 120, required: true }
   email:       { domain: Email, required: true,
                  validators: [ { name: uniqueCustomerEmail, severity: error } ] }
@@ -157,13 +230,15 @@ fields:
   provinceId:  { type: integer,
                  lookup: { entity: Province, value: id, display: name, cache: ttl,
                            filter: "row.countryCode == countryCode", dependsOn: [countryCode] } }
-  creditLimit: { type: decimal, precision: 12, scale: 2, min: 0 }
+  creditLimit: { type: decimal, precision: 12, scale: 2, min: 0, max: 10000000,
+                 displayFormat: { kind: number, pattern: "#,##0.00" },
+                 editFormat: { kind: number, decimals: 2, grouping: false } }
   vipNotes:    { type: text,
                  rules: [ { when: "creditLimit > 1000000.0", required: true,
                             severity: warning, message: customer.vipNotes.recommended } ] }
 ```
 
-Labels and messages default to keys derived from the path (`customer.name.label`, `customer.name.required`) and are resolved from `i18n/`.
+Display labels, hints and messages default to keys derived from the path (`customer.name.displayLabel`, `customer.name.displayHint`, `customer.name.required`) and are resolved from `i18n/`.
 
 ### Computed fields
 
@@ -294,19 +369,23 @@ A dependent lookup (country to province to city) declares `dependsOn` and a filt
 
 ## Localization
 
-All user-facing text (labels, help, placeholders, lookup labels, validation messages) lives in per-locale YAML files under `i18n/`, keyed by stable message keys. v1 ships with full support for multiple locales.
+All user-facing text (display labels, short labels, display hints, placeholders, lookup labels, validation messages) lives in per-locale YAML files under `i18n/`, keyed by stable message keys. v1 ships with full support for multiple locales.
 
 ```yaml
 # i18n/en.yaml
-customer.name.label: Name
+customer.name.displayLabel: Name
+customer.creditLimit.displayLabel: Credit limit
+customer.creditLimit.displayHint: "Maximum credit, in pesos. <b>Requires approval</b> above 1,000,000."
 customer.email.uniqueCustomerEmail: This email is already registered.
 gender.male: Male
 # framework defaults, overridable per field
 radd.required: "{label} is required."
 radd.maxLength: "{label} must be at most {max} characters."
+radd.min: "{label} must be at least {min}."
+radd.max: "{label} must be at most {max}."
 ```
 
-- Messages use ICU MessageFormat placeholders (`{label}`, `{max}`, plurals) so the same template renders in every runtime.
+- Messages use ICU MessageFormat placeholders (`{label}` is the field's display label; `{min}`, `{max}`, plurals) so the same template renders in every runtime.
 - Resolution order: field-specific key, then domain-type key, then framework default (`radd.required`).
 - A missing key in the default locale fails the CLI lint; a missing key in another locale falls back to the default locale and is reported as a warning.
 - The API picks the locale from `Accept-Language` (ASP.NET Core request localization); the client requests the metadata for one locale at a time.
@@ -325,7 +404,7 @@ The backend generates entity classes from the dictionary, then interprets the di
 ### Startup and EF Core
 
 - `builder.Services.AddDataDictionary()` loads the canonical dictionary, embedded in the assembly at build time, and fails fast if it is invalid or a named validator has no implementation.
-- `modelBuilder.ApplyDataDictionary()` in `OnModelCreating` configures the EF model through the Fluent API: table names, keys, `IsRequired`, `HasMaxLength`, `HasPrecision`, defaults, indexes and unique constraints, check constraints for static lookups, relationships and foreign keys, concurrency tokens, and query filters for soft delete.
+- `modelBuilder.ApplyDataDictionary()` in `OnModelCreating` configures the EF model through the Fluent API: table names, keys and key generation (identity or uuid), `IsRequired`, `HasMaxLength`, `HasPrecision`, defaults, indexes and unique constraints, check constraints for static lookups, relationships and foreign keys, concurrency tokens, and query filters for soft delete.
 - Because the model is ordinary EF configuration, LINQ, change tracking, EF migrations and provider-specific behavior all work unchanged.
 
 ### Validation pipeline
@@ -368,9 +447,10 @@ Server-only details (named validator internals, server-only expressions) are nev
 The `@radd/client` package is framework-agnostic and has no UI.
 
 - **Loading:** fetches `/_radd/metadata` at startup, caches it in memory and IndexedDB with a configurable TTL, and revalidates with the ETag. If any API response carries a `RADD-Version` different from the cached one, the client refreshes immediately, which handles deployments mid-session.
-- **Field metadata:** `radd.entity('Customer').field('email')` returns type, required, maxLength, readOnly, label, help, lookup and rules.
+- **Field metadata:** `radd.entity('Customer').field('email')` returns type, required, maxLength, min, max, readOnly, displayLabel, shortLabel, displayHint (sanitized HTML and plain text), placeholder, displayFormat, editFormat, lookup and rules.
 - **Form state:** `radd.evaluate('Customer', values)` returns each field's current required, readOnly and visible state after conditional rules.
 - **Validation:** `radd.validate('Customer', values)` returns results in the same shape as the API, using client-safe rules only.
+- **Formatting:** `radd.format('Customer', 'creditLimit', 1234567.5)` returns `1,234,567.50`; `radd.parse(...)` turns edited input back into a raw value using the edit format.
 - **Lookups:** `radd.lookup('Customer', 'provinceId', { depends, q })` honors static, TTL and dynamic cache modes.
 - **Types:** `radd gen ts` optionally emits TypeScript interfaces and the key catalog for compile-time safety; the runtime behavior does not depend on them.
 
@@ -453,7 +533,7 @@ Some of these EF services are internal APIs and the differ was designed for mode
 - **Renames:** fields and entities declare `renamedFrom`, so a rename becomes a rename instead of drop-and-add.
 - **Classification:** every operation is tagged safe, needs-data-check or destructive in a JSON change report written next to the script.
 - **Data checks:** tightening changes (shorter maxLength, nullable to required, new unique index, new check constraint) include generated pre-check queries that count violating rows.
-- **Destructive changes:** dropping a column or table, or narrowing a type, is excluded from the script unless `--allow-destructive` is passed.
+- **Destructive changes:** dropping a column or table, narrowing a type, or adding or removing identity on an existing column, is excluded from the script unless `--allow-destructive` is passed.
 - **No auto-apply:** the tool writes a script; applying it is a separate, explicit step owned by the team's deployment process.
 
 ## AI-first capabilities
@@ -531,4 +611,6 @@ All open questions from the requirements discussion are decided. Each becomes an
 - **Hot reload:** none for now. Dictionary changes take effect on rebuild and restart (`dotnet watch` covers this in development).
 - **Distribution:** a git repo for now, NuGet and npm packages later, and a single-command project initializer (see Distribution).
 - **Licensing:** public repo, all rights reserved, not open source while in alpha (see Distribution).
+- **Display and edit metadata:** every field can carry a display label, short label, display hint (sanitized HTML), placeholder, display format and edit format (ICU patterns, locale-aware unless symbols are fixed), and numeric min and max. All of it is presentation only; the API stores and returns raw values.
+- **Generated keys:** primary keys can be database-generated (`identity`, auto-increment, with optional seed and increment) or application-generated (`uuid`); generated keys are always read-only.
 - **Naming:** the framework is RADD; the CLI is `radd`; packages are `RADD.*` on NuGet and `@radd/*` on npm; endpoints are `/_radd/*`; headers are `RADD-Version` and `RADD-Acknowledge`.
