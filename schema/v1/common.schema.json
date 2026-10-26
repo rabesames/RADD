@@ -103,6 +103,276 @@
         }
       ]
     },
+    "generated": {
+      "description": "Primary key value generation. identity: the database assigns 1, 2, 3, ... (integer or long). uuid: the application assigns a GUID before insert (guid). Generated keys are always read-only.",
+      "oneOf": [
+        { "type": "string", "enum": ["identity", "uuid"] },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "description": "identity (database auto-increment) or uuid (application-generated GUID).",
+              "enum": ["identity", "uuid"]
+            },
+            "seed": {
+              "type": "integer",
+              "description": "Identity: first value. Ignored by SQLite, which always starts at 1.",
+              "default": 1
+            },
+            "increment": {
+              "type": "integer",
+              "not": { "const": 0 },
+              "description": "Identity: step between values. Ignored by SQLite, which always increments by 1.",
+              "default": 1
+            },
+            "noReuse": {
+              "type": "boolean",
+              "description": "Identity on SQLite: emit AUTOINCREMENT so keys of deleted rows are never reused, at a small write cost.",
+              "default": false
+            }
+          },
+          "if": { "properties": { "kind": { "const": "uuid" } } },
+          "then": { "properties": { "seed": false, "increment": false, "noReuse": false } }
+        }
+      ]
+    },
+    "textKey": {
+      "$ref": "#/$defs/messageKey",
+      "description": "Message key to use instead of the derived one, for example when two fields share a label."
+    },
+    "symbols": {
+      "type": "object",
+      "description": "Fixed grouping and decimal symbols, so the value looks the same in every locale. Omit to follow the viewer's locale.",
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "type": "string",
+          "maxLength": 1,
+          "description": "Grouping separator, for example \",\"."
+        },
+        "decimal": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1,
+          "description": "Decimal separator, for example \".\"."
+        }
+      }
+    },
+    "displayFormat": {
+      "type": "object",
+      "description": "How a stored value is rendered for reading, using ICU patterns. Presentation only: the API stores and returns raw values.",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "number, percent, currency (numeric fields); date, time, datetime; boolean; text.",
+          "enum": ["number", "percent", "currency", "date", "time", "datetime", "boolean", "text"]
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "ICU pattern: a number pattern such as \"#,##0.00\", \"0.0%\" or \"¤#,##0.00\", or a date pattern such as \"yyyy-MM-dd\"."
+        },
+        "symbols": { "$ref": "#/$defs/symbols" },
+        "currency": {
+          "type": "string",
+          "description": "Currency: an ISO 4217 code such as PHP, or the name of a field holding one."
+        },
+        "style": {
+          "type": "string",
+          "description": "Date and time: a named style instead of a pattern.",
+          "enum": ["short", "medium", "long"]
+        },
+        "true": {
+          "$ref": "#/$defs/messageKey",
+          "description": "Boolean: message key shown for true."
+        },
+        "false": {
+          "$ref": "#/$defs/messageKey",
+          "description": "Boolean: message key shown for false."
+        },
+        "case": {
+          "type": "string",
+          "description": "Text: change the case for display.",
+          "enum": ["upper", "lower", "title"]
+        },
+        "mask": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Text: display mask where 0 is a digit, A a letter and * any character; other characters are shown as is."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "enum": ["number", "percent"] } } },
+          "then": {
+            "required": ["pattern"],
+            "properties": {
+              "currency": false,
+              "style": false,
+              "true": false,
+              "false": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "currency" } } },
+          "then": {
+            "required": ["pattern", "currency"],
+            "properties": {
+              "style": false,
+              "true": false,
+              "false": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "enum": ["date", "time", "datetime"] } } },
+          "then": {
+            "oneOf": [{ "required": ["pattern"] }, { "required": ["style"] }],
+            "properties": {
+              "symbols": false,
+              "currency": false,
+              "true": false,
+              "false": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "boolean" } } },
+          "then": {
+            "required": ["true", "false"],
+            "properties": {
+              "pattern": false,
+              "symbols": false,
+              "currency": false,
+              "style": false,
+              "case": false,
+              "mask": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "text" } } },
+          "then": {
+            "oneOf": [{ "required": ["case"] }, { "required": ["mask"] }],
+            "properties": {
+              "pattern": false,
+              "symbols": false,
+              "currency": false,
+              "style": false,
+              "true": false,
+              "false": false
+            }
+          }
+        }
+      ]
+    },
+    "editFormat": {
+      "type": "object",
+      "description": "How the value looks and is typed while editing, and how input is parsed back to a raw value.",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "number (numeric fields); mask and text (string fields); date, time, datetime.",
+          "enum": ["number", "mask", "date", "time", "datetime", "text"]
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number: decimal places shown while editing."
+        },
+        "grouping": {
+          "type": "boolean",
+          "description": "Number: show grouping separators while typing.",
+          "default": false
+        },
+        "allowNegative": {
+          "type": "boolean",
+          "description": "Number: accept a minus sign.",
+          "default": true
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Mask: 0 is a digit, A a letter, * any character, for example \"0000-000-0000\". Date and time: ICU pattern for typed input, for example \"yyyy-MM-dd\"."
+        },
+        "storeLiterals": {
+          "type": "boolean",
+          "description": "Mask: keep the mask's literal characters in the stored value.",
+          "default": false
+        },
+        "case": {
+          "type": "string",
+          "description": "Text: change the case as the user types.",
+          "enum": ["upper", "lower", "title"]
+        },
+        "trim": {
+          "type": "boolean",
+          "description": "Text: trim surrounding spaces.",
+          "default": false
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "number" } } },
+          "then": {
+            "properties": { "pattern": false, "storeLiterals": false, "case": false, "trim": false }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "mask" } } },
+          "then": {
+            "required": ["pattern"],
+            "properties": {
+              "decimals": false,
+              "grouping": false,
+              "allowNegative": false,
+              "case": false,
+              "trim": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "enum": ["date", "time", "datetime"] } } },
+          "then": {
+            "required": ["pattern"],
+            "properties": {
+              "decimals": false,
+              "grouping": false,
+              "allowNegative": false,
+              "storeLiterals": false,
+              "case": false,
+              "trim": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "text" } } },
+          "then": {
+            "properties": {
+              "decimals": false,
+              "grouping": false,
+              "allowNegative": false,
+              "pattern": false,
+              "storeLiterals": false
+            }
+          }
+        }
+      ]
+    },
     "rule": {
       "type": "object",
       "description": "A conditional rule (when + required, readOnly or visible) or an expression rule (expression, optionally guarded by when).",
@@ -321,8 +591,14 @@
           "maximum": 38,
           "description": "Digits after the decimal point (decimal)."
         },
-        "min": { "type": "number", "description": "Minimum value (integer, long, decimal)." },
-        "max": { "type": "number", "description": "Maximum value (integer, long, decimal)." },
+        "min": {
+          "type": "number",
+          "description": "Inclusive minimum (integer, long, decimal). Enforced by the API, checked by the client, and a CHECK constraint where the database supports one."
+        },
+        "max": {
+          "type": "number",
+          "description": "Inclusive maximum (integer, long, decimal). Enforced by the API, checked by the client, and a CHECK constraint where the database supports one."
+        },
         "format": {
           "type": "string",
           "description": "Built-in format check.",
