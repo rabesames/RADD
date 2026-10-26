@@ -39,6 +39,9 @@ export const RULES = {
   RADD209: { rule: "type-with-domain", severity: "error" },
   RADD210: { rule: "lookup-type-mismatch", severity: "error" },
   RADD211: { rule: "invalid-constraint", severity: "error" },
+  RADD212: { rule: "format-type-mismatch", severity: "error" },
+  RADD213: { rule: "invalid-generated", severity: "error" },
+  RADD214: { rule: "generated-option-ignored", severity: "warning" },
   RADD301: { rule: "entity-name", severity: "error" },
   RADD302: { rule: "field-name", severity: "error" },
   RADD303: { rule: "physical-name", severity: "error" },
@@ -50,10 +53,12 @@ export const RULES = {
   RADD503: { rule: "unused-key", severity: "warning" },
   RADD504: { rule: "invalid-message", severity: "error" },
   RADD505: { rule: "unknown-locale", severity: "error" },
+  RADD506: { rule: "invalid-hint-html", severity: "error" },
   RADD601: { rule: "renamed-from-conflict", severity: "error" },
   RADD701: { rule: "expression-syntax", severity: "error" },
   RADD702: { rule: "missing-computed-sql", severity: "error" },
   RADD703: { rule: "invalid-pattern", severity: "error" },
+  RADD704: { rule: "invalid-format-pattern", severity: "error" },
 } as const satisfies Record<string, RuleInfo>;
 
 export type RuleCode = keyof typeof RULES;

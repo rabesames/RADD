@@ -87,7 +87,42 @@ export interface RawConstraints {
   mask?: string;
 }
 
-export interface RawField extends RawConstraints {
+export type RawGenerated =
+  | "identity"
+  | "uuid"
+  | { kind: "identity" | "uuid"; seed?: number; increment?: number; noReuse?: boolean };
+
+export type FormatCase = "upper" | "lower" | "title";
+
+export interface RawDisplayFormat {
+  kind: "number" | "percent" | "currency" | "date" | "time" | "datetime" | "boolean" | "text";
+  pattern?: string;
+  symbols?: { group?: string; decimal?: string };
+  currency?: string;
+  style?: "short" | "medium" | "long";
+  true?: string;
+  false?: string;
+  case?: FormatCase;
+  mask?: string;
+}
+
+export interface RawEditFormat {
+  kind: "number" | "mask" | "date" | "time" | "datetime" | "text";
+  decimals?: number;
+  grouping?: boolean;
+  allowNegative?: boolean;
+  pattern?: string;
+  storeLiterals?: boolean;
+  case?: FormatCase;
+  trim?: boolean;
+}
+
+export interface RawFormats {
+  displayFormat?: RawDisplayFormat;
+  editFormat?: RawEditFormat;
+}
+
+export interface RawField extends RawConstraints, RawFormats {
   type?: LogicalType;
   domain?: string;
   description?: string;
@@ -103,6 +138,11 @@ export interface RawField extends RawConstraints {
   rules?: RawRule[];
   validators?: RawValidatorUse[];
   computed?: RawComputed;
+  generated?: RawGenerated;
+  displayLabel?: string;
+  shortLabel?: string;
+  displayHint?: string;
+  placeholder?: string;
   renamedFrom?: string;
 }
 
@@ -139,7 +179,7 @@ export interface RawEntity {
   renamedFrom?: string;
 }
 
-export interface RawDomainType extends RawConstraints {
+export interface RawDomainType extends RawConstraints, RawFormats {
   domainType: string;
   description?: string;
   tags?: string[];

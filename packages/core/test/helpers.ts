@@ -25,9 +25,9 @@ fields:
     maxLength: 50
     description: Name.
 `,
-  "i18n/en.yaml": `item.label: Item
-item.id.label: ID
-item.name.label: Name
+  "i18n/en.yaml": `item.displayLabel: Item
+item.id.displayLabel: ID
+item.name.displayLabel: Name
 `,
 };
 

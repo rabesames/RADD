@@ -2,6 +2,7 @@ import { parse as parseIcu } from "@formatjs/icu-messageformat-parser";
 import { RE2JS } from "re2js";
 import { checkCall, RADD_BUILTINS, scanCel } from "./cel.js";
 import { type PathSegment, type PendingDiagnostic, type RuleCode, suggest } from "./diagnostics.js";
+import { checkDatePattern, checkHintHtml, checkMask, checkNumberPattern } from "./formats.js";
 import { FRAMEWORK_MESSAGES } from "./framework-messages.js";
 import type { Def, LoadedDictionary } from "./loader.js";
 import type {
@@ -9,6 +10,8 @@ import type {
   RawConstraints,
   RawDomainType,
   RawEntity,
+  RawField,
+  RawFormats,
   RawLookup,
   RawRule,
   RawStaticLookup,
@@ -30,9 +33,12 @@ import {
   defaultLocaleMessages,
   type EffectiveField,
   effectiveField,
+  fieldTextKey,
   firstPresent,
   fitsValueType,
   literalFits,
+  type NormalizedGenerated,
+  normalizeGenerated,
   OPTIONAL_ENTITY_KEYS,
   OPTIONAL_FIELD_KEYS,
   primaryKeyOf,
@@ -55,6 +61,8 @@ class Linter {
   /** Every key the dictionary refers to or may use. */
   private readonly used = new Set<string>(Object.keys(FRAMEWORK_MESSAGES));
   private readonly missingFramework = new Set<string>();
+  /** Display-hint keys, whose text must be allowlisted HTML in every locale. */
+  private readonly hintKeys = new Set<string>();
   private readonly enabledExtensions: ReadonlySet<string>;
   private readonly declaredFunctions: ReadonlySet<string>;
 
@@ -264,6 +272,15 @@ class Linter {
     if (t.data.default !== undefined)
       this.checkDefault(t.data.type, t.data.default, where("default"));
     if (t.data.lookup) this.checkLookupRef(t.data.type, t.data.lookup, where("lookup"), undefined);
+    this.checkFormats(
+      t.data.type,
+      t.data,
+      t.data,
+      t.data.scale,
+      (k) => where(k),
+      `Domain type '${t.name}'`,
+      undefined,
+    );
     for (const [i, r] of (t.data.rules ?? []).entries()) this.checkRule(r, where("rules", i));
     for (const [i, v] of (t.data.validators ?? []).entries()) {
       this.checkValidatorUse(v, where("validators", i), "field");
@@ -307,8 +324,9 @@ class Linter {
     for (const e of this.loaded.entities.values()) {
       const at = (...p: PathSegment[]): Where => ({ file: e.file, path: p });
       const ek = camelCase(e.name);
-      this.need(`${ek}.label`, at("entity"));
+      this.need(`${ek}.displayLabel`, at("entity"));
       for (const k of OPTIONAL_ENTITY_KEYS) this.used.add(`${ek}.${k}`);
+      this.hintKeys.add(`${ek}.displayHint`);
 
       const dbName = e.data.dbName ?? e.name;
       const apiName = e.data.apiName ?? camelCase(e.name);
@@ -413,6 +431,7 @@ class Linter {
     const dbNames = new Map<string, string>();
     const apiNames = new Map<string, string>();
     const renamed = new Map<string, string>();
+    let identityField: string | undefined;
     for (const [name, raw] of Object.entries(fields)) {
       const where = (...p: PathSegment[]): Where => at("fields", name, ...p);
       const field = effectiveField(this.loaded, name, raw);
@@ -428,8 +447,16 @@ class Linter {
         { ...where(), atKey: true },
         `Field '${e.name}.${name}'`,
       );
-      this.need(`${ek}.${name}.label`, { ...where(), atKey: true });
-      for (const k of OPTIONAL_FIELD_KEYS) this.used.add(`${ek}.${name}.${k}`);
+      this.need(
+        fieldTextKey(e.name, name, raw, "displayLabel"),
+        raw.displayLabel ? where("displayLabel") : { ...where(), atKey: true },
+      );
+      for (const k of OPTIONAL_FIELD_KEYS) {
+        // An explicit key must exist; a derived one is optional.
+        if (raw[k] !== undefined) this.need(raw[k], where(k));
+        else this.used.add(fieldTextKey(e.name, name, raw, k));
+      }
+      this.hintKeys.add(fieldTextKey(e.name, name, raw, "displayHint"));
 
       const dbName = raw.dbName ?? titleCase(name);
       const apiName = raw.apiName ?? name;
@@ -498,6 +525,33 @@ class Linter {
             );
           } else {
             this.checkSameType(field.type, target, refField, where("references"));
+          }
+        }
+      }
+      this.checkFormats(
+        field.type,
+        field,
+        raw,
+        field.constraints.scale,
+        (k) => where(k),
+        `Field '${name}'`,
+        {
+          entity: e,
+          fieldNames,
+        },
+      );
+      if (raw.generated !== undefined) {
+        const g = normalizeGenerated(raw.generated);
+        this.checkGenerated(e, name, raw, field.type, g, where);
+        if (g.kind === "identity") {
+          if (identityField !== undefined) {
+            this.report(
+              "RADD213",
+              where("generated"),
+              `${e.name} already has an identity key ('${identityField}'); an entity can have only one.`,
+            );
+          } else {
+            identityField = name;
           }
         }
       }
@@ -688,11 +742,177 @@ class Linter {
       bad("scale", `${what}: scale (${c.scale}) cannot exceed precision (${c.precision}).`);
     if (c.min !== undefined && c.max !== undefined && c.min > c.max)
       bad("min", `${what}: min (${c.min}) is greater than max (${c.max}).`);
+    if (numberTypes.has(type)) {
+      for (const k of ["min", "max"] as const) {
+        const value = c[k];
+        if (value === undefined) continue;
+        const problem = boundProblem(type, value, c.precision, c.scale);
+        if (problem) bad(k, `${what}: ${k} ${value} ${problem}.`);
+      }
+    }
     if (c.minLength !== undefined && c.maxLength !== undefined && c.minLength > c.maxLength)
       bad(
         "minLength",
         `${what}: minLength (${c.minLength}) is greater than maxLength (${c.maxLength}).`,
       );
+  }
+
+  /**
+   * Checks display and edit formats: the kind suits the type, patterns are valid ICU, masks have
+   * placeholders, and referenced keys and fields exist. `effective` includes domain-type formats;
+   * problems in formats the definition did not write itself are reported at its domain.
+   */
+  private checkFormats(
+    type: LogicalType | undefined,
+    effective: RawFormats,
+    own: RawFormats,
+    scale: number | undefined,
+    where: (k: string) => Where,
+    what: string,
+    ctx: { entity: Def<RawEntity>; fieldNames: string[] } | undefined,
+  ): void {
+    if (type === undefined) return;
+    for (const which of ["displayFormat", "editFormat"] as const) {
+      const f = effective[which];
+      if (!f) continue;
+      const base = own[which] ? where(which) : where("domain");
+      const at = (...p: PathSegment[]) =>
+        own[which] ? { ...base, path: [...base.path, ...p] } : base;
+      if (!formatKindFits(which, f.kind, type)) {
+        this.report(
+          "RADD212",
+          at("kind"),
+          `${what}: a ${f.kind} ${which} does not suit a ${type} field.`,
+        );
+        continue;
+      }
+      const pattern = f.pattern;
+      if (pattern !== undefined) {
+        const problem = ["date", "time", "datetime"].includes(f.kind)
+          ? checkDatePattern(pattern)
+          : f.kind === "mask"
+            ? checkMask(pattern)
+            : checkNumberPattern(pattern);
+        if (problem)
+          this.report(
+            "RADD704",
+            at("pattern"),
+            `${what}: ${which} pattern '${pattern}' is invalid: ${problem}.`,
+          );
+      }
+      if (which === "displayFormat") {
+        const d = effective.displayFormat;
+        if (d?.mask !== undefined) {
+          const problem = checkMask(d.mask);
+          if (problem)
+            this.report("RADD704", at("mask"), `${what}: mask '${d.mask}' is invalid: ${problem}.`);
+        }
+        if (d?.symbols?.group !== undefined && d.symbols.group === d.symbols.decimal) {
+          this.report(
+            "RADD704",
+            at("symbols"),
+            `${what}: the grouping and decimal symbols must differ.`,
+          );
+        }
+        for (const k of ["true", "false"] as const) {
+          const key = d?.[k];
+          if (key !== undefined) this.need(key, at(k));
+        }
+        const currency = d?.currency;
+        if (currency !== undefined && !/^[A-Z]{3}$/.test(currency) && ctx) {
+          const target = ctx.entity.data.fields[currency];
+          if (!target) {
+            this.report(
+              "RADD204",
+              at("currency"),
+              `currency '${currency}' is neither an ISO 4217 code nor a field of ${ctx.entity.name}.`,
+              suggest(currency, ctx.fieldNames),
+            );
+          } else if (effectiveField(this.loaded, currency, target).type !== "string") {
+            this.report(
+              "RADD212",
+              at("currency"),
+              `The currency field '${currency}' must be a string.`,
+            );
+          }
+        }
+      } else {
+        const decimals = effective.editFormat?.decimals;
+        if (decimals !== undefined && decimals > 0 && (type === "integer" || type === "long")) {
+          this.report(
+            "RADD212",
+            at("decimals"),
+            `${what}: an ${type} field cannot be edited with decimals.`,
+          );
+        } else if (decimals !== undefined && scale !== undefined && decimals > scale) {
+          this.report(
+            "RADD212",
+            at("decimals"),
+            `${what}: editFormat decimals (${decimals}) exceed the scale (${scale}).`,
+          );
+        }
+      }
+    }
+  }
+
+  private checkGenerated(
+    e: Def<RawEntity>,
+    name: string,
+    raw: RawField,
+    type: LogicalType | undefined,
+    g: NormalizedGenerated,
+    where: (...p: PathSegment[]) => Where,
+  ): void {
+    const at = where("generated");
+    if (!primaryKeyOf(e.data).includes(name)) {
+      this.report(
+        "RADD213",
+        at,
+        `Field '${name}' is not part of ${e.name}'s primary key; only primary key fields can be generated.`,
+      );
+    }
+    if (g.kind === "identity" && type !== undefined && type !== "integer" && type !== "long") {
+      this.report(
+        "RADD213",
+        at,
+        `identity needs an integer or long field; '${name}' is ${type}.`,
+        "Use generated: uuid for guid keys.",
+      );
+    }
+    if (g.kind === "uuid" && type !== undefined && type !== "guid") {
+      this.report(
+        "RADD213",
+        at,
+        `uuid needs a guid field; '${name}' is ${type}.`,
+        "Use generated: identity for integer and long keys.",
+      );
+    }
+    if (raw.default !== undefined) {
+      this.report(
+        "RADD213",
+        where("default"),
+        `Generated key '${name}' cannot also have a default.`,
+      );
+    }
+    if (raw.computed !== undefined) {
+      this.report("RADD213", where("computed"), `Generated key '${name}' cannot also be computed.`);
+    }
+    if (raw.readOnly !== undefined && raw.readOnly !== "always") {
+      this.report(
+        "RADD213",
+        where("readOnly"),
+        `Generated key '${name}' is always read-only; remove readOnly or set it to always.`,
+      );
+    }
+    const sqlite = this.loaded.dictionary?.data.databases.includes("sqlite");
+    if (g.kind === "identity" && sqlite && (g.seed !== 1 || g.increment !== 1)) {
+      this.report(
+        "RADD214",
+        at,
+        `SQLite ignores seed and increment: identity keys there start at 1 and increase by 1.`,
+        "Keep them for SQL Server and Postgres, or remove them if SQLite is the only target.",
+      );
+    }
   }
 
   private checkDefault(type: LogicalType, value: unknown, where: Where): void {
@@ -904,13 +1124,24 @@ class Linter {
         if (!m.file) continue;
         const where = { file: m.file, path: [key], atKey: false };
         try {
-          parseIcu(m.text);
+          // Display hints carry HTML, so tags are text to the ICU parser.
+          parseIcu(m.text, { ignoreTag: true });
         } catch (err) {
           this.report(
             "RADD504",
             where,
             `Message '${key}' is not valid ICU MessageFormat: ${(err as Error).message}.`,
           );
+        }
+        if (this.hintKeys.has(key)) {
+          for (const problem of checkHintHtml(m.text)) {
+            this.report(
+              "RADD506",
+              where,
+              `Display hint '${key}' (${locale}): ${problem}.`,
+              "Allowed: b, strong, i, em, br, p, ul, ol, li, code, and a with an https href.",
+            );
+          }
         }
         if (locale !== defaultLocale && !this.defaultMessages.has(key)) {
           this.report(
@@ -954,4 +1185,58 @@ class Linter {
       }
     }
   }
+}
+
+const NUMERIC: ReadonlySet<LogicalType> = new Set(["integer", "long", "decimal"]);
+const DATE_KINDS: Record<string, readonly LogicalType[]> = {
+  date: ["date", "datetime", "datetimeOffset"],
+  time: ["time", "datetime", "datetimeOffset"],
+  datetime: ["datetime", "datetimeOffset"],
+};
+
+/** Whether a display or edit format kind suits a logical type. */
+function formatKindFits(
+  which: "displayFormat" | "editFormat",
+  kind: string,
+  type: LogicalType,
+): boolean {
+  const dates = DATE_KINDS[kind];
+  if (dates) return dates.includes(type);
+  if (kind === "number" || kind === "percent" || kind === "currency") return NUMERIC.has(type);
+  if (kind === "boolean") return type === "boolean";
+  if (kind === "mask") return type === "string";
+  if (kind === "text")
+    return type === "string" || type === "text" || (which === "displayFormat" && type === "guid");
+  return false;
+}
+
+const INT32 = 2 ** 31;
+const INT64 = 2 ** 63;
+
+/** Why a min or max does not fit the field's type, precision and scale, or undefined if it fits. */
+function boundProblem(
+  type: LogicalType,
+  value: number,
+  precision: number | undefined,
+  scale: number | undefined,
+): string | undefined {
+  if (type === "integer" || type === "long") {
+    if (!Number.isInteger(value)) return `is not a whole number, but the field is ${type}`;
+    const limit = type === "integer" ? INT32 : INT64;
+    if (value < -limit || value >= limit) return `is outside the ${type} range`;
+    return undefined;
+  }
+  if (type !== "decimal" || precision === undefined || scale === undefined) return undefined;
+  const places = decimalPlaces(value);
+  if (places > scale) return `has ${places} decimal places, more than the scale (${scale})`;
+  if (Math.abs(value) >= 10 ** (precision - scale)) {
+    return `does not fit precision ${precision} and scale ${scale} (at most ${"9".repeat(precision - scale)}${scale > 0 ? `.${"9".repeat(scale)}` : ""})`;
+  }
+  return undefined;
+}
+
+function decimalPlaces(value: number): number {
+  const [mantissa = "", exponent = "0"] = String(value).split("e");
+  const fraction = mantissa.split(".")[1]?.length ?? 0;
+  return Math.max(0, fraction - Number(exponent));
 }

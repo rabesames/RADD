@@ -10,6 +10,7 @@
       "audit": false,
       "dbName": "Item",
       "description": "An item.",
+      "displayLabel": "item.displayLabel",
       "fieldOrder": [
         "id",
         "name"
@@ -19,7 +20,7 @@
           "apiName": "id",
           "dbName": "Id",
           "description": "Key.",
-          "label": "item.id.label",
+          "displayLabel": "item.id.displayLabel",
           "messages": {
             "type": "radd.type"
           },
@@ -33,7 +34,7 @@
           "apiName": "name",
           "dbName": "Name",
           "description": "Name.",
-          "label": "item.name.label",
+          "displayLabel": "item.name.displayLabel",
           "maxLength": 50,
           "messages": {
             "maxLength": "radd.maxLength",
@@ -48,7 +49,6 @@
         }
       },
       "indexes": [],
-      "label": "item.label",
       "primaryKey": [
         "id"
       ],
@@ -75,9 +75,9 @@
   "lookups": {},
   "messages": {
     "en": {
-      "item.id.label": "ID",
-      "item.label": "Item",
-      "item.name.label": "Name",
+      "item.displayLabel": "Item",
+      "item.id.displayLabel": "ID",
+      "item.name.displayLabel": "Name",
       "radd.format.email": "{label} must be a valid email address.",
       "radd.format.phone": "{label} must be a valid phone number.",
       "radd.format.url": "{label} must be a valid URL.",
@@ -96,5 +96,5 @@
   "name": "minimal",
   "types": {},
   "validators": {},
-  "version": "sha256:fa03fac9c0b70299aa2cfa4d70d01c5e0741f884320386d6367e50475533cc42"
+  "version": "sha256:e1712bc100cbe9edd0cb6a0a99f0d85381deb5a37e644dfc0f141d0bfb975518"
 }

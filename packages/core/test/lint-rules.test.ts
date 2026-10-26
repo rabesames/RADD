@@ -79,7 +79,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
       ),
       "types/email.yaml":
         "domainType: Email\ndescription: An email.\ntype: string\nmaxLength: 254\nformat: email\n",
-      "i18n/en.yaml": en("item.email.label: Email\n"),
+      "i18n/en.yaml": en("item.email.displayLabel: Email\n"),
     },
   },
   RADD202: {
@@ -96,7 +96,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
       ),
       "lookups/size.yaml":
         "lookup: size\ndescription: Sizes.\nvalueType: string\nitems:\n  - { code: S, label: size.small }\n",
-      "i18n/en.yaml": en("item.size.label: Size\nsize.small: Small\n"),
+      "i18n/en.yaml": en("item.size.displayLabel: Size\nsize.small: Small\n"),
     },
   },
   RADD203: {
@@ -142,7 +142,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
         `${nameField}  total:\n    type: integer\n    computed: { source: application, calculator: itemTotal }\n    description: Total.\n`,
       ),
       "calculators.yaml": "calculators:\n  itemTotal:\n    description: Totals an item.\n",
-      "i18n/en.yaml": en("item.total.label: Total\n"),
+      "i18n/en.yaml": en("item.total.displayLabel: Total\n"),
     },
   },
   RADD207: {
@@ -150,14 +150,14 @@ const CASES: Record<keyof typeof RULES, Case> = {
     bad: {
       "entities/item.yaml": item(
         nameField,
-        `rules:\n  - { expression: "isBlnk(name) == false", message: item.label }\n`,
+        `rules:\n  - { expression: "isBlnk(name) == false", message: item.displayLabel }\n`,
       ),
     },
     at: ["entities/item.yaml", "isBlnk"],
     good: {
       "entities/item.yaml": item(
         nameField,
-        `rules:\n  - { expression: "isBlank(name) == false", message: item.label }\n`,
+        `rules:\n  - { expression: "isBlank(name) == false", message: item.displayLabel }\n`,
       ),
     },
   },
@@ -166,14 +166,14 @@ const CASES: Record<keyof typeof RULES, Case> = {
     bad: {
       "entities/item.yaml": item(
         nameField,
-        `rules:\n  - { expression: "name.lowerAscii() == name", message: item.label }\n`,
+        `rules:\n  - { expression: "name.lowerAscii() == name", message: item.displayLabel }\n`,
       ),
     },
     at: ["entities/item.yaml", "lowerAscii"],
     good: {
       "entities/item.yaml": item(
         nameField,
-        `rules:\n  - { expression: "name.lowerAscii() == name", message: item.label }\n`,
+        `rules:\n  - { expression: "name.lowerAscii() == name", message: item.displayLabel }\n`,
       ),
       "dictionary.yaml": `${BASE["dictionary.yaml"]}expressions: { extensions: [strings] }\n`,
     },
@@ -186,7 +186,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
       ),
       "types/email.yaml":
         "domainType: Email\ndescription: An email.\ntype: string\nmaxLength: 254\n",
-      "i18n/en.yaml": en("item.email.label: Email\n"),
+      "i18n/en.yaml": en("item.email.displayLabel: Email\n"),
     },
     at: ["entities/item.yaml", "# with a domain"],
   },
@@ -198,7 +198,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
       ),
       "lookups/size.yaml":
         "lookup: size\ndescription: Sizes.\nvalueType: integer\nitems:\n  - { code: 1, label: size.small }\n",
-      "i18n/en.yaml": en("item.size.label: Size\nsize.small: Small\n"),
+      "i18n/en.yaml": en("item.size.displayLabel: Size\nsize.small: Small\n"),
     },
     at: ["entities/item.yaml", "list: size"],
   },
@@ -210,6 +210,53 @@ const CASES: Record<keyof typeof RULES, Case> = {
       ),
     },
     at: ["entities/item.yaml", "maxLength: 3"],
+  },
+  RADD212: {
+    name: "number display format on a string field",
+    bad: {
+      "entities/item.yaml": item(
+        `  name:\n    type: string\n    maxLength: 50\n    displayFormat: { kind: number, pattern: "#,##0" }\n    description: Name.\n`,
+      ),
+    },
+    at: ["entities/item.yaml", "kind: number"],
+    good: {
+      "entities/item.yaml": item(
+        `${nameField}  count:\n    type: integer\n    displayFormat: { kind: number, pattern: "#,##0" }\n    editFormat: { kind: number, grouping: true }\n    description: Count.\n`,
+      ),
+      "i18n/en.yaml": en("item.count.displayLabel: Count\n"),
+    },
+  },
+  RADD213: {
+    name: "uuid on an integer key",
+    bad: {
+      "entities/item.yaml": item(nameField).replace(
+        "    type: integer\n    description: Key.",
+        "    type: integer\n    generated: uuid\n    description: Key.",
+      ),
+    },
+    at: ["entities/item.yaml", "generated: uuid"],
+    good: {
+      "entities/item.yaml": item(nameField).replace(
+        "    type: integer\n    description: Key.",
+        "    type: integer\n    generated: identity\n    description: Key.",
+      ),
+    },
+  },
+  RADD214: {
+    name: "identity seed that SQLite ignores",
+    bad: {
+      "entities/item.yaml": item(nameField).replace(
+        "    type: integer\n    description: Key.",
+        "    type: integer\n    generated: { kind: identity, seed: 1000 }\n    description: Key.",
+      ),
+    },
+    at: ["entities/item.yaml", "seed: 1000"],
+    good: {
+      "entities/item.yaml": item(nameField).replace(
+        "    type: integer\n    description: Key.",
+        "    type: integer\n    generated: { kind: identity, noReuse: true }\n    description: Key.",
+      ),
+    },
   },
   RADD301: {
     name: "entity name not PascalCase",
@@ -262,7 +309,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
   },
   RADD501: {
     name: "field label missing in the default locale",
-    bad: { "i18n/en.yaml": "item.label: Item\nitem.id.label: ID\n" },
+    bad: { "i18n/en.yaml": "item.displayLabel: Item\nitem.id.displayLabel: ID\n" },
     at: ["entities/item.yaml", "  name:"],
   },
   RADD502: {
@@ -272,31 +319,41 @@ const CASES: Record<keyof typeof RULES, Case> = {
         "supported: [en]",
         "supported: [en, fil]",
       ) as string,
-      "i18n/fil.yaml": "item.label: Bagay\nitem.id.label: ID\n",
+      "i18n/fil.yaml": "item.displayLabel: Bagay\nitem.id.displayLabel: ID\n",
     },
-    at: ["i18n/fil.yaml", "item.label"],
-    // item.name.label, plus one warning for all the radd.* framework messages.
+    at: ["i18n/fil.yaml", "item.displayLabel"],
+    // item.name.displayLabel, plus one warning for all the radd.* framework messages.
     count: 2,
   },
   RADD503: {
     name: "unused key",
-    bad: { "i18n/en.yaml": en("item.colour.label: Colour\n") },
-    at: ["i18n/en.yaml", "item.colour.label"],
+    bad: { "i18n/en.yaml": en("item.colour.displayLabel: Colour\n") },
+    at: ["i18n/en.yaml", "item.colour.displayLabel"],
   },
   RADD504: {
     name: "malformed ICU message",
     bad: {
       "i18n/en.yaml": BASE["i18n/en.yaml"]?.replace(
-        "item.label: Item",
-        'item.label: "Item {oops"',
+        "item.displayLabel: Item",
+        'item.displayLabel: "Item {oops"',
       ) as string,
     },
-    at: ["i18n/en.yaml", "item.label"],
+    at: ["i18n/en.yaml", "item.displayLabel"],
   },
   RADD505: {
     name: "i18n file for an unsupported locale",
-    bad: { "i18n/de.yaml": "item.label: Ding\n" },
-    at: ["i18n/de.yaml", "item.label"],
+    bad: { "i18n/de.yaml": "item.displayLabel: Ding\n" },
+    at: ["i18n/de.yaml", "item.displayLabel"],
+  },
+  RADD506: {
+    name: "script tag in a display hint",
+    bad: { "i18n/en.yaml": en('item.name.displayHint: "Name <script>alert(1)</script>"\n') },
+    at: ["i18n/en.yaml", "item.name.displayHint"],
+    good: {
+      "i18n/en.yaml": en(
+        'item.name.displayHint: "The <b>full</b> name.<br>See <a href=\\"https://example.com\\">rules</a>."\n',
+      ),
+    },
   },
   RADD601: {
     name: "renamedFrom names a field that still exists",
@@ -317,7 +374,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
     bad: {
       "entities/item.yaml": item(
         nameField,
-        `rules:\n  - { expression: "(size(name) > 0", message: item.label }\n`,
+        `rules:\n  - { expression: "(size(name) > 0", message: item.displayLabel }\n`,
       ),
     },
     at: ["entities/item.yaml", "(size(name) > 0"],
@@ -334,7 +391,7 @@ const CASES: Record<keyof typeof RULES, Case> = {
       "entities/item.yaml": item(
         `${nameField}  upper:\n    type: string\n    maxLength: 50\n    computed: { source: database, sql: { sqlite: "upper(Name)" } }\n    description: Upper.\n`,
       ),
-      "i18n/en.yaml": en("item.upper.label: Upper\n"),
+      "i18n/en.yaml": en("item.upper.displayLabel: Upper\n"),
     },
   },
   RADD703: {
@@ -351,7 +408,93 @@ const CASES: Record<keyof typeof RULES, Case> = {
       ),
     },
   },
+  RADD704: {
+    name: "malformed ICU number pattern",
+    bad: {
+      "entities/item.yaml": item(
+        `${nameField}  count:\n    type: integer\n    displayFormat: { kind: number, pattern: "#.##0" }\n    description: Count.\n`,
+      ),
+      "i18n/en.yaml": en("item.count.displayLabel: Count\n"),
+    },
+    at: ["entities/item.yaml", "#.##0"],
+    good: {
+      "entities/item.yaml": item(
+        `${nameField}  placed:\n    type: date\n    displayFormat: { kind: date, pattern: "d MMM yyyy" }\n    editFormat: { kind: date, pattern: "yyyy-MM-dd" }\n    description: Placed.\n`,
+      ),
+      "i18n/en.yaml": en("item.placed.displayLabel: Placed\n"),
+    },
+  },
 };
+
+describe("min and max (RADD211)", () => {
+  const field = (spec: string) =>
+    writeDictionary({
+      "entities/item.yaml": item(`${nameField}  amount:\n${spec}    description: Amount.\n`),
+      "i18n/en.yaml": en("item.amount.displayLabel: Amount\n"),
+    });
+  const messages = (spec: string) =>
+    lint(field(spec))
+      .diagnostics.filter((d) => d.code === "RADD211")
+      .map((d) => d.message);
+
+  it("accepts bounds that fit precision and scale", () => {
+    expect(
+      messages(
+        "    type: decimal\n    precision: 5\n    scale: 2\n    min: -999.99\n    max: 999.99\n",
+      ),
+    ).toEqual([]);
+  });
+
+  it("rejects bounds outside precision, beyond the scale, or not whole for integers", () => {
+    expect(messages("    type: decimal\n    precision: 5\n    scale: 2\n    max: 1000\n")).toEqual([
+      "Field 'amount': max 1000 does not fit precision 5 and scale 2 (at most 999.99).",
+    ]);
+    expect(messages("    type: decimal\n    precision: 5\n    scale: 2\n    min: 0.125\n")).toEqual(
+      ["Field 'amount': min 0.125 has 3 decimal places, more than the scale (2)."],
+    );
+    expect(messages("    type: integer\n    min: 0.5\n    max: 3000000000\n")).toEqual([
+      "Field 'amount': min 0.5 is not a whole number, but the field is integer.",
+      "Field 'amount': max 3000000000 is outside the integer range.",
+    ]);
+  });
+
+  it("rejects min above max", () => {
+    expect(messages("    type: integer\n    min: 10\n    max: 1\n")).toEqual([
+      "Field 'amount': min (10) is greater than max (1).",
+    ]);
+  });
+});
+
+describe("generated keys (RADD213)", () => {
+  const codes = (fields: string, extra = "") =>
+    lint(writeDictionary({ "entities/item.yaml": item(fields, extra) }))
+      .diagnostics.filter((d) => d.code === "RADD213")
+      .map((d) => d.message);
+
+  it("allows only primary key fields to be generated", () => {
+    expect(
+      codes(
+        `  name:\n    type: string\n    maxLength: 50\n    generated: uuid\n    description: Name.\n`,
+      ),
+    ).toEqual([
+      "Field 'name' is not part of Item's primary key; only primary key fields can be generated.",
+      "uuid needs a guid field; 'name' is string.",
+    ]);
+  });
+
+  it("allows one identity per entity, and no default or writable readOnly on a generated key", () => {
+    const fields = `  id:\n    type: integer\n    generated: identity\n    readOnly: never\n    default: 1\n    description: Key.\n  seq:\n    type: long\n    generated: identity\n    description: Seq.\n${nameField}`;
+    const yaml = `entity: Item\ndescription: An item.\nprimaryKey: [id, seq]\nfields:\n${fields}`;
+    const messages = lint(writeDictionary({ "entities/item.yaml": yaml }))
+      .diagnostics.filter((d) => d.code === "RADD213")
+      .map((d) => d.message);
+    expect(messages).toEqual([
+      "Generated key 'id' is always read-only; remove readOnly or set it to always.",
+      "Generated key 'id' cannot also have a default.",
+      "Item already has an identity key ('id'); an entity can have only one.",
+    ]);
+  });
+});
 
 describe("BASE fixture", () => {
   it("has no diagnostics", () => {

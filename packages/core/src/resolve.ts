@@ -3,8 +3,11 @@ import type {
   LogicalType,
   RawConstraints,
   RawDefault,
+  RawDisplayFormat,
   RawDomainType,
+  RawEditFormat,
   RawField,
+  RawGenerated,
   RawLookup,
   RawRule,
   RawValidatorUse,
@@ -32,6 +35,8 @@ export interface EffectiveField {
   constraints: RawConstraints;
   default?: RawDefault;
   lookup?: RawLookup;
+  displayFormat?: RawDisplayFormat;
+  editFormat?: RawEditFormat;
   /** Rules and validators with the definition that declared them. */
   rules: { rule: RawRule; fromDomain: boolean; index: number }[];
   validators: { use: RawValidatorUse; fromDomain: boolean; index: number }[];
@@ -53,6 +58,8 @@ export function effectiveField(
   const type = raw.type ?? d?.type;
   const def = raw.default ?? d?.default;
   const lookup = raw.lookup ?? d?.lookup;
+  const displayFormat = raw.displayFormat ?? d?.displayFormat;
+  const editFormat = raw.editFormat ?? d?.editFormat;
   return {
     name,
     raw,
@@ -61,6 +68,8 @@ export function effectiveField(
     constraints,
     ...(def !== undefined ? { default: def } : {}),
     ...(lookup ? { lookup } : {}),
+    ...(displayFormat ? { displayFormat } : {}),
+    ...(editFormat ? { editFormat } : {}),
     rules: [
       ...(d?.rules ?? []).map((rule, index) => ({ rule, fromDomain: true, index })),
       ...(raw.rules ?? []).map((rule, index) => ({ rule, fromDomain: false, index })),
@@ -132,9 +141,40 @@ export function defaultLocaleMessages(loaded: LoadedDictionary): ReadonlyMap<str
   return (locale && loaded.messages.get(locale)) || new Map();
 }
 
-/** Optional derived keys that are included when present in the default locale. */
-export const OPTIONAL_FIELD_KEYS = ["shortLabel", "help", "placeholder"] as const;
-export const OPTIONAL_ENTITY_KEYS = ["pluralLabel", "help"] as const;
+/** Optional text keys that are included when present in the default locale (or named explicitly). */
+export const OPTIONAL_FIELD_KEYS = ["shortLabel", "displayHint", "placeholder"] as const;
+export const OPTIONAL_ENTITY_KEYS = ["pluralLabel", "displayHint"] as const;
+
+export type FieldTextKey = "displayLabel" | (typeof OPTIONAL_FIELD_KEYS)[number];
+
+/** A field's text key: the explicit override, or the key derived from the path. */
+export function fieldTextKey(
+  entityName: string,
+  fieldName: string,
+  raw: RawField,
+  which: FieldTextKey,
+): string {
+  return raw[which] ?? `${camelCase(entityName)}.${fieldName}.${which}`;
+}
+
+export interface NormalizedGenerated {
+  kind: "identity" | "uuid";
+  seed?: number;
+  increment?: number;
+  noReuse?: boolean;
+}
+
+/** Normalizes generated: the short form becomes an object, and identity options get their defaults. */
+export function normalizeGenerated(g: RawGenerated): NormalizedGenerated {
+  const o = typeof g === "string" ? { kind: g } : g;
+  if (o.kind === "uuid") return { kind: "uuid" };
+  return {
+    kind: "identity",
+    seed: o.seed ?? 1,
+    increment: o.increment ?? 1,
+    noReuse: o.noReuse ?? false,
+  };
+}
 
 export function primaryKeyOf(raw: { primaryKey: string | string[] }): string[] {
   return Array.isArray(raw.primaryKey) ? raw.primaryKey : [raw.primaryKey];

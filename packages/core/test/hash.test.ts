@@ -35,10 +35,10 @@ items:
   - { code: S, label: size.small }
   - { code: L, label: size.large }
 `,
-  "i18n/en.yaml": `item.label: Item
-item.id.label: ID
-item.name.label: Name
-item.size.label: Size
+  "i18n/en.yaml": `item.displayLabel: Item
+item.id.displayLabel: ID
+item.name.displayLabel: Name
+item.size.displayLabel: Size
 size.small: Small
 size.large: Large
 `,

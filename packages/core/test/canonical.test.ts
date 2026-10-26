@@ -19,6 +19,8 @@ type: decimal
 precision: 12
 scale: 2
 min: 0
+displayFormat: { kind: currency, pattern: "¤#,##0.00", currency: PHP, symbols: { group: ",", decimal: "." } }
+editFormat: { kind: number, grouping: false }
 rules:
   - { expression: "dec.round(this, 2) == this", message: money.rounded }
 `,
@@ -27,9 +29,8 @@ description: A line.
 primaryKey: id
 fields:
   id:
-    type: guid
-    readOnly: always
-    default: { expression: "newGuid()" }
+    type: long
+    generated: { kind: identity, noReuse: true }
     description: Key.
   orderId:
     type: guid
@@ -61,6 +62,7 @@ primaryKey: id
 fields:
   id:
     type: guid
+    generated: uuid
     description: Key.
   customerName:
     type: string
@@ -73,22 +75,22 @@ fields:
     lookup: { entity: Order, value: id, display: customerName }
     description: Parent order.
 `,
-  "i18n/en.yaml": `orderLine.label: Line
-orderLine.id.label: ID
-orderLine.orderId.label: Order
-orderLine.price.label: Price
+  "i18n/en.yaml": `orderLine.displayLabel: Line
+orderLine.id.displayLabel: ID
+orderLine.orderId.displayLabel: Order
+orderLine.price.displayLabel: Price
 orderLine.price.max: Price is too high.
-orderLine.price.help: Unit price.
-orderLine.status.label: Status
-orderLine.total.label: Total
-order.label: Order
-order.id.label: ID
-order.customerName.label: Customer
-order.parentId.label: Parent
+orderLine.price.displayHint: Unit <b>price</b>.
+orderLine.status.displayLabel: Status
+orderLine.total.displayLabel: Total
+order.displayLabel: Order
+order.id.displayLabel: ID
+order.customerName.displayLabel: Customer
+order.parentId.displayLabel: Parent
 money.min: Amounts cannot be negative.
 money.rounded: Use whole centavos.
 `,
-  "i18n/fil.yaml": `orderLine.label: Linya
+  "i18n/fil.yaml": `orderLine.displayLabel: Linya
 `,
 };
 
@@ -132,7 +134,30 @@ describe("canonical build", () => {
       validators: [],
     });
     expect(line.fields.status.default).toEqual({ value: "Open" });
-    expect(line.fields.id.default).toEqual({ expression: "newGuid()" });
+  });
+
+  it("normalizes generated keys and makes them read-only", () => {
+    expect(line.fields.id).toMatchObject({
+      generated: { kind: "identity", seed: 1, increment: 1, noReuse: true },
+      readOnly: "always",
+    });
+    expect(order.fields.id).toMatchObject({ generated: { kind: "uuid" }, readOnly: "always" });
+    expect(line.fields.orderId.generated).toBeUndefined();
+  });
+
+  it("inherits display and edit formats from the domain type, with edit defaults", () => {
+    expect(line.fields.price.displayFormat).toEqual({
+      kind: "currency",
+      pattern: "¤#,##0.00",
+      currency: "PHP",
+      symbols: { group: ",", decimal: "." },
+    });
+    expect(line.fields.price.editFormat).toEqual({
+      kind: "number",
+      decimals: 2,
+      grouping: false,
+      allowNegative: true,
+    });
   });
 
   it("expands domain types, letting field values win", () => {
@@ -166,9 +191,9 @@ describe("canonical build", () => {
   });
 
   it("includes optional keys only when they exist in the default locale", () => {
-    expect(line.fields.price.label).toBe("orderLine.price.label");
-    expect(line.fields.price.help).toBe("orderLine.price.help");
-    expect(line.fields.orderId.help).toBeUndefined();
+    expect(line.fields.price.displayLabel).toBe("orderLine.price.displayLabel");
+    expect(line.fields.price.displayHint).toBe("orderLine.price.displayHint");
+    expect(line.fields.orderId.displayHint).toBeUndefined();
   });
 
   it("makes computed fields read-only and fills computed defaults", () => {
@@ -210,8 +235,8 @@ describe("canonical build", () => {
 
   it("carries messages for every supported locale, with framework messages for en", () => {
     expect(doc.messages.en["radd.required"]).toBe("{label} is required.");
-    expect(doc.messages.en["orderLine.label"]).toBe("Line");
-    expect(doc.messages.fil).toEqual({ "orderLine.label": "Linya" });
+    expect(doc.messages.en["orderLine.displayLabel"]).toBe("Line");
+    expect(doc.messages.fil).toEqual({ "orderLine.displayLabel": "Linya" });
   });
 
   it("produces key-sorted JSON text with a trailing newline", () => {

@@ -1,6 +1,14 @@
 import { dictionaryHash, sortKeys } from "./hash.js";
 import type { Def, LoadedDictionary } from "./loader.js";
-import type { RawEntity, RawLookup, RawRule, RawValidatorUse } from "./model.js";
+import type {
+  LogicalType,
+  RawDisplayFormat,
+  RawEditFormat,
+  RawEntity,
+  RawLookup,
+  RawRule,
+  RawValidatorUse,
+} from "./model.js";
 import { camelCase, titleCase } from "./names.js";
 import {
   CONSTRAINT_KEYS,
@@ -10,7 +18,9 @@ import {
   durationSeconds,
   type EffectiveField,
   effectiveField,
+  fieldTextKey,
   firstPresent,
+  normalizeGenerated,
   OPTIONAL_ENTITY_KEYS,
   OPTIONAL_FIELD_KEYS,
   primaryKeyOf,
@@ -157,7 +167,9 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
         );
       }
       const optional: Json = {};
-      for (const k of OPTIONAL_FIELD_KEYS) optional[k] = present(`${ek}.${name}.${k}`);
+      // An explicit text key is always used; a derived one only when the default locale has it.
+      for (const k of OPTIONAL_FIELD_KEYS)
+        optional[k] = f[k] ?? present(fieldTextKey(e.name, name, f, k));
 
       let references: Json | undefined;
       if (f.references) {
@@ -200,7 +212,8 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
         dbName: f.dbName ?? titleCase(name),
         apiName: f.apiName ?? name,
         required: f.required ?? false,
-        readOnly: f.computed ? "always" : (f.readOnly ?? "never"),
+        readOnly: f.computed || f.generated ? "always" : (f.readOnly ?? "never"),
+        generated: f.generated === undefined ? undefined : normalizeGenerated(f.generated),
         ...constraints,
         default:
           def === undefined
@@ -209,11 +222,15 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
               ? { expression: def.expression.trim() }
               : { value: def },
         lookup: field.lookup ? lookup(field.lookup) : undefined,
+        displayFormat: field.displayFormat ? displayFormat(field.displayFormat) : undefined,
+        editFormat: field.editFormat
+          ? editFormat(field.editFormat, field.type, field.constraints.scale)
+          : undefined,
         references,
         computed,
         rules: field.rules.map((r) => rule(r.rule, e.name, name, field)),
         validators: field.validators.map((v) => validatorUse(v.use, e.name, name)),
-        label: `${ek}.${name}.label`,
+        displayLabel: fieldTextKey(e.name, name, f, "displayLabel"),
         ...optional,
         messages: fieldMessages,
         renamedFrom: f.renamedFrom,
@@ -241,7 +258,7 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
       tags: raw.tags?.length ? asSet(raw.tags) : undefined,
       dbName: tableName,
       apiName: raw.apiName ?? ek,
-      label: `${ek}.label`,
+      displayLabel: `${ek}.displayLabel`,
       ...optional,
       primaryKey: primaryKeyOf(raw),
       fieldOrder,
@@ -292,6 +309,8 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
               ? { expression: d.default.expression.trim() }
               : { value: d.default },
         lookup: d.lookup ? lookup(d.lookup) : undefined,
+        displayFormat: d.displayFormat ? displayFormat(d.displayFormat) : undefined,
+        editFormat: d.editFormat ? editFormat(d.editFormat, d.type, d.scale) : undefined,
         rules: (d.rules ?? []).map((r) => rule(r, t.name, undefined, undefined)),
         validators: (d.validators ?? []).map((u) =>
           compact({
@@ -347,6 +366,34 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
   const sorted = sortKeys(compact(document));
   sorted.version = dictionaryHash(sorted);
   return sortKeys(sorted);
+}
+
+/** Display formats are written as given; symbols are kept only when set. */
+function displayFormat(f: RawDisplayFormat): Json {
+  return compact({ ...f, symbols: f.symbols ? compact({ ...f.symbols }) : undefined });
+}
+
+/** Edit formats get their defaults: decimals from the scale, grouping off, negatives allowed, trim off. */
+function editFormat(
+  f: RawEditFormat,
+  type: LogicalType | undefined,
+  scale: number | undefined,
+): Json {
+  switch (f.kind) {
+    case "number":
+      return {
+        kind: f.kind,
+        decimals: f.decimals ?? (type === "decimal" ? (scale ?? 0) : 0),
+        grouping: f.grouping ?? false,
+        allowNegative: f.allowNegative ?? true,
+      };
+    case "mask":
+      return { kind: f.kind, pattern: f.pattern, storeLiterals: f.storeLiterals ?? false };
+    case "text":
+      return compact({ kind: f.kind, case: f.case, trim: f.trim ?? false });
+    default:
+      return { kind: f.kind, pattern: f.pattern };
+  }
 }
 
 function param(p: { name: string; type: string; required?: boolean; description?: string }): Json {
