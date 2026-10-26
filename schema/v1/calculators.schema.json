@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/calculators.schema.json",
+  "title": "RADD named calculators",
+  "description": "Named server calculators for computed fields (calculators.yaml). Each runtime registers an implementation by name.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["calculators"],
+  "properties": {
+    "calculators": {
+      "type": "object",
+      "description": "Calculators by name (lowerCamelCase), for example orderTotal.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": { "$ref": "common.schema.json#/$defs/description" },
+          "parameters": {
+            "type": "array",
+            "description": "Parameters the calculator accepts.",
+            "items": { "$ref": "common.schema.json#/$defs/parameter" }
+          }
+        }
+      }
+    }
+  }
+}
