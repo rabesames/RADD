@@ -1,3 +1,4 @@
+// Solution file: `tsc -b` (npm run build) builds every package in dependency order.
 {
   "files": [],
   "references": [{ "path": "packages/core" }, { "path": "packages/cli" }]

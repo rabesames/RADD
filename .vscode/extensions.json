@@ -1,3 +1,9 @@
+// VS Code suggests these when the repository is opened.
 {
-  "recommendations": ["redhat.vscode-yaml", "biomejs.biome"]
+  "recommendations": [
+    // YAML: schema validation, completion and hover for dictionary files.
+    "redhat.vscode-yaml",
+    // Biome: the formatter and linter npm run check uses.
+    "biomejs.biome"
+  ]
 }

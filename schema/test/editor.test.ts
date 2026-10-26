@@ -4,12 +4,13 @@
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { parse } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { getLanguageService } from "yaml-language-server";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
-const settings = JSON.parse(readFileSync(`${repo}.vscode/settings.json`, "utf8")) as {
+const settings = parse(readFileSync(`${repo}.vscode/settings.json`, "utf8")) as {
   "yaml.schemas": Record<string, string[]>;
 };
 
