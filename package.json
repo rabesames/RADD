@@ -18,12 +18,15 @@
     "test": "vitest run",
     "check": "biome check .",
     "format": "biome check --write .",
+    "schema:build": "node scripts/build-schemas.mjs",
+    "schema:check": "node scripts/build-schemas.mjs --check",
     "adr:index": "node scripts/adr-index.mjs",
     "adr:check": "node scripts/check-adrs.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.3",
     "@types/node": "^24.19.2",
+    "jsonc-parser": "^3.3.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",
     "vscode-languageserver-textdocument": "^1.0.16",

@@ -11,8 +11,10 @@
       "!**/*.md",
       "!**/*.yaml",
       "!**/dist",
-      // Generated output, compared byte for byte; formatting it would break the comparison.
+      // Generated output: expected.json is compared byte for byte, and schema/v1 is written by
+      // npm run schema:build from schema/src.
       "!conformance/**/expected.json",
+      "!schema/v1",
       "!**/__snapshots__"
     ]
   },

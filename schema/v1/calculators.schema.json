@@ -1,11 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/calculators.schema.json",
+  "$comment": "Generated from schema/src/calculators.schema.jsonc by npm run schema:build. Do not edit.",
   "title": "RADD named calculators",
   "description": "Named server calculators for computed fields (calculators.yaml). Each runtime registers an implementation by name.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["calculators"],
+  "required": [
+    "calculators"
+  ],
   "properties": {
     "calculators": {
       "type": "object",
@@ -14,11 +17,15 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "description": { "$ref": "common.schema.json#/$defs/description" },
+          "description": {
+            "$ref": "common.schema.json#/$defs/description"
+          },
           "parameters": {
             "type": "array",
             "description": "Parameters the calculator accepts.",
-            "items": { "$ref": "common.schema.json#/$defs/parameter" }
+            "items": {
+              "$ref": "common.schema.json#/$defs/parameter"
+            }
           }
         }
       }

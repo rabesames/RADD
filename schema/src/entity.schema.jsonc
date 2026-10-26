@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/entity.schema.json",
+  "title": "RADD entity",
+  "description": "One entity of a RADD dictionary (entities/*.yaml).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entity", "primaryKey", "fields"],
+  "properties": {
+    "entity": {
+      "type": "string",
+      "description": "Logical entity name, PascalCase and singular, for example OrderLine."
+    },
+    "description": { "$ref": "common.schema.json#/$defs/description" },
+    "tags": { "$ref": "common.schema.json#/$defs/tags" },
+    "dbName": {
+      "$ref": "common.schema.json#/$defs/dbName",
+      "description": "Table name. Defaults to the entity name (TitleCase, not pluralized)."
+    },
+    "apiName": {
+      "$ref": "common.schema.json#/$defs/apiName",
+      "description": "Name in the API and /_radd routes. Defaults to the camelCase entity name."
+    },
+    "primaryKey": {
+      "description": "Primary key field, or several fields for a composite key.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      ]
+    },
+    "fields": {
+      "type": "object",
+      "description": "Fields by logical name (lowerCamelCase). Declaration order is significant: it sets column, property and default form order.",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/field" }
+    },
+    "indexes": {
+      "type": "array",
+      "description": "Indexes and unique constraints.",
+      "items": { "$ref": "#/$defs/index" }
+    },
+    "relationships": {
+      "type": "object",
+      "description": "Navigations by name (lowerCamelCase), for example lines or customer.",
+      "additionalProperties": { "$ref": "#/$defs/relationship" }
+    },
+    "rules": {
+      "$ref": "common.schema.json#/$defs/rules",
+      "description": "Entity-level rules, typically cross-field expressions."
+    },
+    "validators": {
+      "$ref": "common.schema.json#/$defs/validators",
+      "description": "Entity-scope named server validators."
+    },
+    "audit": {
+      "type": "boolean",
+      "description": "Track created and updated timestamps and users. The columns are defined in stage 3.",
+      "default": false
+    },
+    "softDelete": {
+      "type": "boolean",
+      "description": "Mark rows deleted instead of removing them, and filter them from queries.",
+      "default": false
+    },
+    "concurrencyToken": {
+      "type": "string",
+      "description": "Field used as the optimistic concurrency token."
+    },
+    "renamedFrom": {
+      "type": "string",
+      "description": "Previous logical name, so a rename becomes a rename instead of drop-and-add. Remove once every database is migrated."
+    }
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "description": "A field. Give either type or domain.",
+      "additionalProperties": false,
+      "anyOf": [{ "required": ["type"] }, { "required": ["domain"] }],
+      "properties": {
+        "type": { "$ref": "common.schema.json#/$defs/logicalType" },
+        "domain": {
+          "type": "string",
+          "description": "Domain type from types/. The field inherits its type, constraints and rules; constraints may be overridden, the base type may not."
+        },
+        "description": { "$ref": "common.schema.json#/$defs/description" },
+        "tags": { "$ref": "common.schema.json#/$defs/tags" },
+        "dbName": {
+          "$ref": "common.schema.json#/$defs/dbName",
+          "description": "Column name. Defaults to the TitleCase field name."
+        },
+        "apiName": {
+          "$ref": "common.schema.json#/$defs/apiName",
+          "description": "JSON property name. Defaults to the camelCase field name."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Not nullable, and a value must be supplied.",
+          "default": false
+        },
+        "readOnly": {
+          "type": "string",
+          "description": "never: writable. always: never written by clients. onUpdate: set on create only.",
+          "enum": ["never", "always", "onUpdate"],
+          "default": "never"
+        },
+        "unique": {
+          "type": "boolean",
+          "description": "Shorthand for a unique index on this field alone.",
+          "default": false
+        },
+        "default": { "$ref": "common.schema.json#/$defs/default" },
+        "maxLength": { "$ref": "common.schema.json#/$defs/constraints/properties/maxLength" },
+        "minLength": { "$ref": "common.schema.json#/$defs/constraints/properties/minLength" },
+        "precision": { "$ref": "common.schema.json#/$defs/constraints/properties/precision" },
+        "scale": { "$ref": "common.schema.json#/$defs/constraints/properties/scale" },
+        "min": { "$ref": "common.schema.json#/$defs/constraints/properties/min" },
+        "max": { "$ref": "common.schema.json#/$defs/constraints/properties/max" },
+        "format": { "$ref": "common.schema.json#/$defs/constraints/properties/format" },
+        "pattern": { "$ref": "common.schema.json#/$defs/constraints/properties/pattern" },
+        "mask": { "$ref": "common.schema.json#/$defs/constraints/properties/mask" },
+        "displayFormat": { "$ref": "common.schema.json#/$defs/displayFormat" },
+        "editFormat": { "$ref": "common.schema.json#/$defs/editFormat" },
+        "displayLabel": {
+          "$ref": "common.schema.json#/$defs/textKey",
+          "description": "Message key of the display label. Defaults to <entity>.<field>.displayLabel."
+        },
+        "shortLabel": {
+          "$ref": "common.schema.json#/$defs/textKey",
+          "description": "Message key of the short label. Defaults to <entity>.<field>.shortLabel when that key exists."
+        },
+        "displayHint": {
+          "$ref": "common.schema.json#/$defs/textKey",
+          "description": "Message key of the display hint (allowlisted HTML). Defaults to <entity>.<field>.displayHint when that key exists."
+        },
+        "placeholder": {
+          "$ref": "common.schema.json#/$defs/textKey",
+          "description": "Message key of the placeholder. Defaults to <entity>.<field>.placeholder when that key exists."
+        },
+        "generated": { "$ref": "common.schema.json#/$defs/generated" },
+        "lookup": { "$ref": "common.schema.json#/$defs/lookup" },
+        "references": { "$ref": "common.schema.json#/$defs/references" },
+        "rules": { "$ref": "common.schema.json#/$defs/rules" },
+        "validators": { "$ref": "common.schema.json#/$defs/validators" },
+        "computed": { "$ref": "common.schema.json#/$defs/computed" },
+        "renamedFrom": {
+          "type": "string",
+          "description": "Previous logical field name, so a rename becomes a rename instead of drop-and-add."
+        }
+      }
+    },
+    "index": {
+      "type": "object",
+      "description": "An index on one or more fields.",
+      "additionalProperties": false,
+      "required": ["fields"],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "description": "Fields in index order.",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "unique": {
+          "type": "boolean",
+          "description": "A unique index.",
+          "default": false
+        },
+        "dbName": {
+          "$ref": "common.schema.json#/$defs/dbName",
+          "description": "Index name. Defaults to IX_<Table>_<Columns>, or UX_ for unique indexes."
+        },
+        "description": { "$ref": "common.schema.json#/$defs/description" }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "description": "A navigation to another entity.",
+      "additionalProperties": false,
+      "required": ["kind", "entity"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "manyToOne: this entity holds the foreign key. oneToMany: the other entity holds it. manyToMany: through a join entity.",
+          "enum": ["manyToOne", "oneToMany", "manyToMany"]
+        },
+        "entity": { "type": "string", "description": "The related entity." },
+        "foreignKey": {
+          "type": "string",
+          "description": "manyToOne: the field on this entity. oneToMany: the field on the related entity."
+        },
+        "through": {
+          "type": "string",
+          "description": "manyToMany: the join entity."
+        },
+        "description": { "$ref": "common.schema.json#/$defs/description" }
+      },
+      "if": { "properties": { "kind": { "const": "manyToMany" } } },
+      "then": { "required": ["through"], "properties": { "foreignKey": false } },
+      "else": { "required": ["foreignKey"], "properties": { "through": false } }
+    }
+  }
+}

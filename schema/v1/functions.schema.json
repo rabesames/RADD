@@ -1,11 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/functions.schema.json",
+  "$comment": "Generated from schema/src/functions.schema.jsonc by npm run schema:build. Do not edit.",
   "title": "RADD custom CEL functions",
   "description": "Project-specific CEL functions (functions.yaml). Each runtime implements them as a CEL extension.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["functions"],
+  "required": [
+    "functions"
+  ],
   "properties": {
     "functions": {
       "type": "object",
@@ -13,24 +16,41 @@
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["parameters", "returns"],
+        "required": [
+          "parameters",
+          "returns"
+        ],
         "properties": {
-          "description": { "$ref": "common.schema.json#/$defs/description" },
+          "description": {
+            "$ref": "common.schema.json#/$defs/description"
+          },
           "parameters": {
             "type": "array",
             "description": "Parameters in call order.",
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["name", "type"],
+              "required": [
+                "name",
+                "type"
+              ],
               "properties": {
-                "name": { "type": "string", "description": "Parameter name." },
-                "type": { "$ref": "#/$defs/celType" },
-                "description": { "$ref": "common.schema.json#/$defs/description" }
+                "name": {
+                  "type": "string",
+                  "description": "Parameter name."
+                },
+                "type": {
+                  "$ref": "#/$defs/celType"
+                },
+                "description": {
+                  "$ref": "common.schema.json#/$defs/description"
+                }
               }
             }
           },
-          "returns": { "$ref": "#/$defs/celType" },
+          "returns": {
+            "$ref": "#/$defs/celType"
+          },
           "clientSafe": {
             "type": "boolean",
             "description": "true: implemented in every runtime, so rules using it run on the client. false: server only.",

@@ -1,21 +1,31 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/lookup.schema.json",
+  "$comment": "Generated from schema/src/lookup.schema.jsonc by npm run schema:build. Do not edit.",
   "title": "RADD static lookup",
   "description": "A static lookup list (lookups/*.yaml), versioned with the dictionary.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["lookup", "valueType", "items"],
+  "required": [
+    "lookup",
+    "valueType",
+    "items"
+  ],
   "properties": {
     "lookup": {
       "type": "string",
       "description": "Lookup name, lowerCamelCase, for example gender or yesNo."
     },
-    "description": { "$ref": "common.schema.json#/$defs/description" },
+    "description": {
+      "$ref": "common.schema.json#/$defs/description"
+    },
     "valueType": {
       "type": "string",
       "description": "Type of the stored code. Must match the type of fields using this lookup.",
-      "enum": ["string", "integer"]
+      "enum": [
+        "string",
+        "integer"
+      ]
     },
     "items": {
       "type": "array",
@@ -24,10 +34,16 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["code", "label"],
+        "required": [
+          "code",
+          "label"
+        ],
         "properties": {
           "code": {
-            "type": ["string", "integer"],
+            "type": [
+              "string",
+              "integer"
+            ],
             "description": "The stored value."
           },
           "label": {
@@ -43,7 +59,9 @@
             "description": "Inactive items stay valid for existing data but are not offered for new values.",
             "default": true
           },
-          "description": { "$ref": "common.schema.json#/$defs/description" }
+          "description": {
+            "$ref": "common.schema.json#/$defs/description"
+          }
         }
       }
     }

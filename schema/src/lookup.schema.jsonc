@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/lookup.schema.json",
+  "title": "RADD static lookup",
+  "description": "A static lookup list (lookups/*.yaml), versioned with the dictionary.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lookup", "valueType", "items"],
+  "properties": {
+    "lookup": {
+      "type": "string",
+      "description": "Lookup name, lowerCamelCase, for example gender or yesNo."
+    },
+    "description": { "$ref": "common.schema.json#/$defs/description" },
+    "valueType": {
+      "type": "string",
+      "description": "Type of the stored code. Must match the type of fields using this lookup.",
+      "enum": ["string", "integer"]
+    },
+    "items": {
+      "type": "array",
+      "description": "The allowed values, in display order unless sortOrder is given.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "label"],
+        "properties": {
+          "code": {
+            "type": ["string", "integer"],
+            "description": "The stored value."
+          },
+          "label": {
+            "$ref": "common.schema.json#/$defs/messageKey",
+            "description": "Message key of the display text, for example gender.male."
+          },
+          "sortOrder": {
+            "type": "integer",
+            "description": "Display order; items without one follow in declaration order."
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Inactive items stay valid for existing data but are not offered for new values.",
+            "default": true
+          },
+          "description": { "$ref": "common.schema.json#/$defs/description" }
+        }
+      }
+    }
+  }
+}

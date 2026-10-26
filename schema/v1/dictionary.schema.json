@@ -1,18 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/dictionary.schema.json",
+  "$comment": "Generated from schema/src/dictionary.schema.jsonc by npm run schema:build. Do not edit.",
   "title": "RADD dictionary",
   "description": "The dictionary's root file (dictionary.yaml).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name", "formatVersion", "locales", "databases"],
+  "required": [
+    "name",
+    "formatVersion",
+    "locales",
+    "databases"
+  ],
   "properties": {
     "name": {
       "type": "string",
       "description": "Name of the system this dictionary serves, kebab-case, for example acme-orders.",
       "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
     },
-    "description": { "$ref": "common.schema.json#/$defs/description" },
+    "description": {
+      "$ref": "common.schema.json#/$defs/description"
+    },
     "formatVersion": {
       "const": 1,
       "description": "The RADD dictionary format these files are written in. The dictionary's own version is the content hash computed by radd build."
@@ -21,7 +29,10 @@
       "type": "object",
       "description": "Locales with labels and messages in i18n/.",
       "additionalProperties": false,
-      "required": ["default", "supported"],
+      "required": [
+        "default",
+        "supported"
+      ],
       "properties": {
         "default": {
           "$ref": "#/$defs/locale",
@@ -30,7 +41,9 @@
         "supported": {
           "type": "array",
           "description": "Every supported locale, including the default.",
-          "items": { "$ref": "#/$defs/locale" },
+          "items": {
+            "$ref": "#/$defs/locale"
+          },
           "minItems": 1,
           "uniqueItems": true
         }
@@ -39,7 +52,14 @@
     "databases": {
       "type": "array",
       "description": "Database providers this dictionary must support. Database-computed fields need SQL for each.",
-      "items": { "type": "string", "enum": ["sqlite", "sqlserver", "postgres"] },
+      "items": {
+        "type": "string",
+        "enum": [
+          "sqlite",
+          "sqlserver",
+          "postgres"
+        ]
+      },
       "minItems": 1,
       "uniqueItems": true
     },
@@ -51,7 +71,16 @@
         "extensions": {
           "type": "array",
           "description": "CEL extension libraries expressions may use. Anything else fails lint.",
-          "items": { "type": "string", "enum": ["strings", "math", "lists", "sets", "encoders"] },
+          "items": {
+            "type": "string",
+            "enum": [
+              "strings",
+              "math",
+              "lists",
+              "sets",
+              "encoders"
+            ]
+          },
           "uniqueItems": true
         }
       }

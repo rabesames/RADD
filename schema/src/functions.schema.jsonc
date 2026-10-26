@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/functions.schema.json",
+  "title": "RADD custom CEL functions",
+  "description": "Project-specific CEL functions (functions.yaml). Each runtime implements them as a CEL extension.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["functions"],
+  "properties": {
+    "functions": {
+      "type": "object",
+      "description": "Functions by name: lowerCamelCase with at most one namespace, for example isWeekday or geo.distance.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["parameters", "returns"],
+        "properties": {
+          "description": { "$ref": "common.schema.json#/$defs/description" },
+          "parameters": {
+            "type": "array",
+            "description": "Parameters in call order.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "type"],
+              "properties": {
+                "name": { "type": "string", "description": "Parameter name." },
+                "type": { "$ref": "#/$defs/celType" },
+                "description": { "$ref": "common.schema.json#/$defs/description" }
+              }
+            }
+          },
+          "returns": { "$ref": "#/$defs/celType" },
+          "clientSafe": {
+            "type": "boolean",
+            "description": "true: implemented in every runtime, so rules using it run on the client. false: server only.",
+            "default": false
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "celType": {
+      "type": "string",
+      "description": "A CEL type: bool, int, uint, double, string, bytes, timestamp, duration, dyn, list(T) or map(K, V).",
+      "pattern": "^(bool|int|uint|double|string|bytes|timestamp|duration|dyn|list\\(.+\\)|map\\(.+,.+\\))$"
+    }
+  }
+}
