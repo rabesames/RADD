@@ -16,6 +16,7 @@ Every architectural or Rommel-level decision in RADD is recorded here, in the sa
 | [ADR-0004](ADR-0004.md) | A headless TypeScript client with TTL-cached metadata from the API | Accepted | 2026-10-26 |  |
 | [ADR-0005](ADR-0005.md) | CEL for expressions, with a declared subset, custom functions and named server validators | Accepted | 2026-10-26 |  |
 | [ADR-0006](ADR-0006.md) | Computed fields from the database or the application, declared explicitly | Accepted | 2026-10-26 |  |
+| [ADR-0007](ADR-0007.md) | Display and edit metadata on fields, with text in i18n and ICU formats | Accepted | 2026-10-26 |  |
 | [ADR-0008](ADR-0008.md) | Generate migration scripts by diffing the dictionary against a live database | Accepted | 2026-10-26 |  |
 | [ADR-0009](ADR-0009.md) | A Node/TypeScript CLI core with stack plugins in each stack's language | Accepted | 2026-10-26 |  |
 | [ADR-0010](ADR-0010.md) | Structured logging with consistent property names and a defined use of levels | Accepted | 2026-10-26 |  |
@@ -38,10 +39,12 @@ Every architectural or Rommel-level decision in RADD is recorded here, in the sa
 | [ADR-0027](ADR-0027.md) | JSON Schema draft 2020-12, validated with Ajv, with a keyword set editors understand | Accepted | 2026-10-26 |  |
 | [ADR-0028](ADR-0028.md) | Canonical form and version hash | Accepted | 2026-10-26 |  |
 | [ADR-0029](ADR-0029.md) | Logical, database and API names for entities and fields | Accepted | 2026-10-26 |  |
+| [ADR-0030](ADR-0030.md) | Message keys are derived from the path and resolved at build time | Accepted | 2026-10-26 |  |
 | [ADR-0031](ADR-0031.md) | Literal defaults and expression defaults are written differently | Accepted | 2026-10-26 |  |
 | [ADR-0032](ADR-0032.md) | Lint diagnostics, rule codes and the CLI contract | Accepted | 2026-10-26 |  |
 | [ADR-0033](ADR-0033.md) | Locales are declared by the dictionary | Accepted | 2026-10-26 |  |
 | [ADR-0034](ADR-0034.md) | ADR enforcement through a required CI check, with the merge as approval | Accepted | 2026-10-26 |  |
 | [ADR-0035](ADR-0035.md) | Foreign keys, relationships and lookup defaults | Accepted | 2026-10-26 |  |
 | [ADR-0036](ADR-0036.md) | Lexical CEL checks in lint until the CEL library is chosen | Accepted | 2026-10-26 |  |
+| [ADR-0037](ADR-0037.md) | Primary keys can be generated as identity or uuid | Accepted | 2026-10-26 |  |
 <!-- adr-index:end -->
