@@ -83,7 +83,7 @@ The order puts the dictionary format first and the risky technical bets (CEL lib
 
 | # | Stage | Outcome | Detail | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Repo foundation and dictionary format | A dictionary can be written in YAML with editor help, linted, and built into canonical JSON with a stable hash | Detailed | Not started |
+| 1 | Repo foundation and dictionary format | A dictionary can be written in YAML with editor help, linted, and built into canonical JSON with a stable hash | Detailed | Proposed |
 | 2 | Spikes | Evidence-based picks for the CEL libraries, the EF diff approach and the source-generator approach | Detailed | Not started |
 | 3 | .NET runtime: model and EF Core | Generated entity classes and an EF model configured from the dictionary, running on SQLite | Detailed | Not started |
 | 4 | API validation pipeline | All rule kinds, severities, named validators and ProblemDetails results, with structured logging | Placeholder | Not started |
@@ -98,18 +98,21 @@ The order puts the dictionary format first and the risky technical bets (CEL lib
 
 At the end of this stage, a dictionary can be authored in YAML with autocomplete and inline errors in the editor, linted with clear messages, and built into canonical JSON with a hash that only changes when meaning changes.
 
+> **Proposal status:** approved by Rommel on 2026-10-26, with the naming change in decision 4 below.
+
 ### Scope
 
 1. **Monorepo skeleton:** npm workspaces for TypeScript and one .NET solution, sharing a root README, LICENSE (all rights reserved, alpha) and CI workflow.
 
    ```
-   /schema            JSON Schema for every dictionary file type
-   /packages/core     TypeScript: loader, canonical build, hash, lint
-   /packages/cli      radd command (build and lint only for now)
-   /dotnet            .NET solution (empty projects, filled in stage 3)
+   /schema/v1         JSON Schema for every dictionary file type
+   /packages/core     @radd/core: loader, canonical build, hash, lint
+   /packages/cli      @radd/cli: the radd command (build and lint only for now)
+   /dotnet            RADD.slnx with empty projects, filled in stage 3
    /conformance       test-vector format and first vectors
    /examples/acme-orders/dictionary
-   /docs
+   /scripts           repo tooling (ADR immutability check)
+   /docs              user docs
    /docs/adr          architecture decision records (ADR-0001.md, ...)
    ```
 2. **JSON Schema (draft 2020-12)** for `dictionary.yaml`, entities, domain types, lookups, `validators.yaml`, `calculators.yaml`, `functions.yaml` and `i18n/*.yaml`, with descriptions on every property so editors show help text.
@@ -120,20 +123,148 @@ At the end of this stage, a dictionary can be authored in YAML with autocomplete
 
 **ADRs for decisions already made:** stage 1 also sets up `/docs/adr`, the index, the template and the CI immutability check, and backfills one ADR per decision already agreed in the spec: YAML dictionary format; runtime interpretation with generated entity classes; headless client with TTL-cached metadata; CEL with declared subset, custom functions and named server validators; computed fields (database and application); migration scripts by diffing against a live database; Node CLI core with stack plugins; structured logging and level usage; one dictionary per system; no generic CRUD endpoints; no hot reload; read-only payload handling deferred; warning UX left to the component layer; licensing; naming (RADD, `radd`, `RADD.*`, `@radd/*`); latest LTS versions; GitHub Actions for CI; and the ADR standard itself. Rommel can harden these at the stage 1 gate.
 
+### Proposed design
+
+#### Tooling
+
+| Concern | Choice | Why |
+| --- | --- | --- |
+| Packages | `@radd/core` (library), `@radd/cli` (bin `radd`), both `private: true`, `license: UNLICENSED` | Matches the naming decision; nothing is published in alpha |
+| Language and modules | TypeScript, `strict`, ESM only (`"type": "module"`, `module: nodenext`) | Node 24+ is ESM-first; one module system across packages |
+| Compiler | TypeScript 7 (`tsc -b` with project references); fall back to the latest 6.x if `--build` is not solid in 7 | Latest stable; the fallback is recorded in the PR if used |
+| Build on install | Root `prepare` script runs `tsc -b`, so `npm install` then `npx radd ...` works from a fresh clone | Validation checklist step 1 |
+| YAML parser | `yaml` (eemeli/yaml) v2, YAML 1.2 core schema | Keeps source ranges for every node (needed for file:line:column), rejects duplicate keys, YAML 1.2 so `N`, `Y`, `no`, `on` stay strings |
+| JSON Schema validator | Ajv v8 (`ajv/dist/2020`) plus `ajv-formats` | De facto standard, full 2020-12 support, structured errors with instance paths that map back to YAML nodes |
+| Test runner | Vitest | Already named in the plan |
+| CLI parsing | `commander` | Subcommands, help text and option validation without hand-rolled code; the plugin protocol in stage 8 does not depend on it |
+| RE2 check for patterns | `re2js` (pure JS port of RE2) | Validates `pattern` with RE2 semantics, no native build on Windows |
+| ICU check for messages | `@formatjs/icu-messageformat-parser` | Lint can reject a malformed message before a runtime does |
+| Code formatting and lint | Biome | One fast tool for format and lint; repo-internal, no ADR needed |
+| .NET | `RADD.slnx` with `RADD.Core`, `RADD.EntityFrameworkCore`, `RADD.AspNetCore` (net10.0) and `RADD.Generators` (netstandard2.0, required for Roslyn generators); `global.json` pins SDK 10.0.x; `Directory.Build.props` turns on nullable and warnings-as-errors; central package management | Empty projects only; stage 3 fills them |
+| Line endings | `.gitattributes` with `* text=auto eol=lf` | The dev machine checks out with CRLF; hashes and snapshots must not depend on it |
+
+#### Dictionary files
+
+| File | Top-level shape |
+| --- | --- |
+| `dictionary.yaml` | `name`, `description`, `formatVersion: 1`, `locales: { default, supported }`, `databases: [sqlite]`, `expressions: { extensions: [strings] }`, `lookups: { defaultTtl: 10m }` |
+| `entities/**/*.yaml` | `entity: Customer`, `description`, `dbName`, `apiName`, `primaryKey`, `fields`, `indexes`, `relationships`, `rules`, `validators`, `audit`, `softDelete`, `concurrencyToken`, `renamedFrom`, `tags` |
+| `types/**/*.yaml` | `domainType: Email`, `description`, `type`, then any field constraint (`maxLength`, `format`, `pattern`, `rules`, ...) |
+| `lookups/**/*.yaml` | `lookup: gender`, `description`, `valueType`, `items: [{ code, label, sortOrder, active }]` |
+| `validators.yaml`, `calculators.yaml` | `validators:` / `calculators:` map of name to `{ description, scope: field or entity, parameters, message }` |
+| `functions.yaml` | `functions:` map of name (may be dotted, e.g. `geo.distance`) to `{ description, parameters: [{ name, type }], returns, clientSafe }` (CEL type names; `clientSafe` defaults to false) |
+| `i18n/<locale>.yaml` or `i18n/<locale>/*.yaml` | Flat map of message key to ICU MessageFormat text; a locale may be split over several files |
+
+- Folders under `entities/`, `types/` and `lookups/` may be nested; file names carry no meaning (the name comes from the `entity:`, `domainType:` or `lookup:` key), so renaming or moving a file never changes the hash.
+- YAML anchors, aliases, merge keys and custom tags are rejected: every file must read on its own, and domain types are the reuse mechanism.
+- Field properties: `type` or `domain` (not both), `description`, `tags`, `required`, `maxLength`, `minLength`, `precision`, `scale`, `min`, `max`, `default`, `readOnly` (`never`, `always`, `onUpdate`), `format` (`email`, `url`, `phone`), `pattern` (RE2), `mask`, `lookup`, `references`, `rules`, `validators`, `computed`, `dbName`, `apiName`, `renamedFrom`.
+- Lookup on a field: `{ list: gender }` or `{ entity, value, display, cache, ttl, filter, dependsOn, search }`. A reference-table lookup implies a foreign key. `cache` defaults to `ttl`, because reference-table data changes at runtime and `static` would serve stale values.
+- Plain foreign keys (OrderLine.orderId) use `references: { entity: Order, field: id, onDelete: restrict | cascade | setNull }`.
+- Relationships give navigation names: `relationships: { lines: { oneToMany: OrderLine, foreignKey: orderId } }`, `{ manyToOne: Customer, foreignKey: customerId }`, `{ manyToMany: Tag, through: OrderTag }`.
+- Rules: `{ when, required | readOnly | visible, severity, code, message }` for conditional rules; `{ when?, expression, severity, code, message }` for cross-field and expression rules. Named validators go under `validators: [{ name, params, severity, code, message }]` on a field or entity.
+- `audit`, `softDelete` and `concurrencyToken` (the name of a declared field) are recorded as given. Turning `audit` and `softDelete` into concrete columns is decided in stage 3 alongside EF.
+
+#### Canonical form and hash
+
+- One JSON document: `formatVersion`, `name`, `version`, `locales`, `databases`, `expressions`, `lookupDefaults`, `types`, `lookups`, `entities`, `validators`, `calculators`, `functions`, `messages` (per locale).
+- **Defaults are made explicit** before hashing (`required: false`, `readOnly: never`, `cache: ttl`, index names, `dbName` and `apiName` for every entity and field, `primaryKey` as an array), so writing a default out or leaving it implicit gives the same hash.
+- **Normalization:** durations become seconds (`10m` → `ttlSeconds: 600`); field-level `unique: true` becomes an entity index identical to an explicit unique index; set-like arrays (`tags`, `dependsOn`, `extensions`, supported locales) are sorted and de-duplicated; every other array keeps its order.
+- **Domain types are expanded** into each field (field overrides win, rules are concatenated domain-first) while `domain: Email` is kept for reference.
+- **Message keys are derived and resolved at build.** Labels default to `customer.name.label` (entity prefix is the lowerCamel entity name). Each constraint's message is resolved to one key by trying the field key (`customer.name.maxLength`), then the domain-type key (`email.maxLength`), then the framework default (`radd.maxLength`), and taking the first that exists in the default locale. A rule's `code` defaults to its `message` key, or to `<entity>.<field>.<validatorName>` for validators, matching the spec's result example.
+- **Framework messages:** `@radd/core` ships `radd.*` messages for `en`; a project's i18n overrides them. Other locales supply their own `radd.*` text or fall back with a warning. The messages that end up in the canonical document are part of the hash.
+- **Hash:** SHA-256 over the RFC 8785 JSON Canonicalization Scheme (JCS) serialization of the document without its `version` property, written as `version: "sha256:<64 hex>"`. JCS is a published standard, so a C# or Java implementation can reproduce the hash from the conformance vectors.
+- **Output:** `radd build <dir>` writes pretty-printed, key-sorted JSON (two-space indent, LF, trailing newline) to `--out`, default `<dir>/../.radd/dictionary.json` (`.radd/` is git-ignored). The build runs lint first and refuses to write if there are errors.
+
+#### Lint rules
+
+Codes are stable and never reused. Every diagnostic has `code`, `rule`, `severity`, `message`, `file` (relative to the dictionary folder), `line`, `column` and `path` (JSON pointer), and a "did you mean" hint where one applies.
+
+| Code | Rule | Severity | Catches |
+| --- | --- | --- | --- |
+| RADD101 | yaml-syntax | error | Invalid YAML, duplicate keys, anchors, aliases, merge keys, custom tags |
+| RADD102 | schema | error | Any JSON Schema violation (unknown property, wrong type, bad enum value) |
+| RADD103 | duplicate-name | error | Two definitions with the same name, a name shared by an entity, domain type and lookup (they share the message-key namespace), the reserved prefix `radd`, or one i18n key in two files of a locale |
+| RADD104 | unknown-file | warning | A YAML file outside the known layout, or a `.yml` extension |
+| RADD105 | missing-dictionary-file | error | No `dictionary.yaml` in the folder |
+| RADD201 | unknown-domain-type | error | `domain:` names no domain type |
+| RADD202 | unknown-lookup | error | `lookup.list` names no static lookup |
+| RADD203 | unknown-entity | error | Lookup, `references` or relationship names no entity |
+| RADD204 | unknown-field | error | `primaryKey`, index, `concurrencyToken`, lookup `value`/`display`, `dependsOn`, `foreignKey` or `references.field` names no field |
+| RADD205 | unknown-validator | error | Validator not declared in `validators.yaml`, or used at the wrong scope |
+| RADD206 | unknown-calculator | error | Calculator not declared in `calculators.yaml` |
+| RADD207 | unknown-function | error | A CEL expression calls a function that is not standard CEL, an enabled extension, a RADD built-in or declared in `functions.yaml` |
+| RADD208 | extension-not-enabled | error | A CEL expression uses a function from an extension not listed in `dictionary.yaml` |
+| RADD209 | type-with-domain | error | A field sets both `type` and `domain` (a domain's base type cannot be overridden) |
+| RADD210 | lookup-type-mismatch | error | A static lookup's `valueType`, or a referenced field's type, differs from the field's type |
+| RADD211 | invalid-constraint | error | A constraint that does not fit the type (`maxLength` on an integer, `scale` > `precision`, `min` > `max`) |
+| RADD301 | entity-name | error | Entity or domain type not PascalCase |
+| RADD302 | field-name | error | Field or relationship not lowerCamelCase |
+| RADD303 | physical-name | error | A `dbName` that is not a plain SQL identifier, or an `apiName` that is not a plain identifier; two fields of an entity with the same `dbName` or `apiName` (ignoring case), or two entities with the same `dbName` or `apiName` |
+| RADD304 | component-name | error | Lookup, validator, calculator or function not lowerCamelCase (functions may have one dotted namespace) |
+| RADD305 | file-name | warning | File name is not the kebab-case form of the name it defines (`entities/order-line.yaml` for OrderLine) |
+| RADD401 | missing-description | error | Entity, field, domain type, lookup, validator, calculator or function without a `description` |
+| RADD501 | missing-default-locale-key | error | A required message key (entity and field labels, lookup item labels, explicit rule and validator messages) is missing in the default locale |
+| RADD502 | missing-locale-key | warning | A key present in the default locale is missing in another supported locale |
+| RADD503 | unused-key | warning | An i18n key nothing refers to (derived optional keys such as `.help` and `.placeholder` count as used) |
+| RADD504 | invalid-message | error | Message text is not valid ICU MessageFormat |
+| RADD505 | unknown-locale | error | An i18n file for a locale not in `locales.supported`, or a supported locale with no file |
+| RADD601 | renamed-from-conflict | error | `renamedFrom` names an existing entity or field, equals its own name, or two items claim the same old name |
+| RADD701 | expression-syntax | error | Lexical errors in a CEL expression (unterminated string, unbalanced brackets) |
+| RADD702 | missing-computed-sql | error | A database-computed field has no SQL for an enabled database |
+| RADD703 | invalid-pattern | error | `pattern` is not valid RE2 |
+
+Expression checks in this stage use a small CEL lexer that finds function calls; full parsing, identifier checks, type checking and the decimal-arithmetic warning arrive with the stage 2 library.
+
+#### CLI
+
+- `radd lint [dir]` and `radd build [dir] [--out file]`; `dir` defaults to `./dictionary`.
+- Text output is one line per diagnostic, `file:line:column  severity  CODE  message`, followed by a summary.
+- `--json` prints one object: `{ ok, errorCount, warningCount, diagnostics: [...] }`, plus `version` and `out` for build.
+- Exit codes: 0 for success (warnings allowed), 1 for lint errors, 2 for usage or internal errors.
+
+#### Example dictionary
+
+`acme-orders` with domain types Email and Money; static lookup `gender`; entities Country, Province (with countryCode), Customer (the spec example: email with `uniqueCustomerEmail`, gender list, country lookup, province as a dependent lookup filtered by country, the conditional `vipNotes` warning), Order (customer reference, `lines` relationship, audit) and OrderLine (order reference, quantity, unitPrice, `lineTotal` computed by the application and persisted). Full `en` and `fil` translations.
+
+#### ADR mechanics
+
+- ADR-0001 is the ADR standard; the other backfilled ADRs follow in the order listed above, all with status Accepted. New decisions made in this stage (the tooling and format choices above) get their own ADRs after the backfill.
+- `scripts/check-adrs.mjs` runs in CI on pull requests. It diffs `docs/adr` against the base branch and fails on a deleted ADR, or on any change to an ADR whose base status is Hardened, Superseded, Obsolete or Rejected, except a Hardened ADR moving to Superseded or Obsolete with only the status and Superseded-by lines changed and a Superseded-by target that exists (and, for Superseded, lists it under Supersedes). It also fails if the index and the ADR files disagree on number, title or status. The checking logic is a pure function with Vitest tests.
+- `CODEOWNERS`: `/docs/adr/ @rabesames`.
+
+#### CI
+
+`.github/workflows/ci.yml` on push and pull request: a Node job on Ubuntu and Windows × Node 24 and 26 (`npm ci`, Biome check, build, test, `radd lint` on the example), a .NET job (`dotnet build dotnet/RADD.slnx`), and the ADR check on pull requests.
+
+#### Spec decisions (agreed with Rommel, 2026-10-26)
+
+1. **`version` in `dictionary.yaml`.** The file carries `formatVersion: 1` (which RADD format it is written in); `version` exists only in the canonical JSON, as the hash.
+2. **Literal versus expression defaults.** `default:` is always a literal; expressions use `default: { expression: "newGuid()" }`. `newGuid()` and `ctx.now` join the built-ins.
+3. **Field order.** The canonical entity keeps a `fieldOrder` array, so reordering fields changes the hash, while reordering properties inside a definition does not.
+4. **Database and API names.** Every entity and field has a logical name (the YAML key: PascalCase entities, lowerCamelCase fields), a database name `dbName` and an API name `apiName`. `dbName` defaults to TitleCase (entity `Customer` → table `Customer`, field `countryCode` → column `CountryCode`; no pluralizing). `apiName` defaults to camelCase (entity `orderLine`, field `countryCode`) and names JSON properties and `/_radd/*` route segments. Both can be overridden per entity and field (`dbName: LEGACY_CD`), and the canonical JSON always states both. CEL expressions, message keys and generated C# use the logical name. `dbName` replaces the spec's `table:`; database-computed SQL refers to `dbName` columns.
+5. **Locales.** The dictionary owns locales; the `radd.config.yaml` entry is dropped when stage 8 is detailed.
+6. **More backfilled ADRs.** Add distribution, the ProblemDetails result format with three severities, ICU MessageFormat localization, the conformance suite as the portability mechanism, and the first stack (React + TypeScript, ASP.NET Core with EF Core, SQLite).
+7. **CODEOWNERS.** Keep `CODEOWNERS` for review requests and ownership, make the ADR check a required status check on `main`, and treat Rommel's merge as the approval (an author cannot approve their own pull request).
+8. **New stage 1 ADRs** are Accepted, like the backfill.
+9. Wording: the spec's Lookups section says "three sources" but lists two (static lists and reference tables) plus dependency; fixed in the spec update.
+
 ### Tests and examples
 
 - Unit tests (Vitest) for the loader, defaults and canonical form.
-- Hash stability tests: reordering keys, changing whitespace or splitting files does not change the hash; changing any value does.
+- Hash stability tests: reordering keys, changing whitespace or line endings, renaming or moving files, or splitting a locale over several files does not change the hash; writing out a default does not change it; changing any value does.
 - A good and a bad fixture for every lint rule, asserting the exact code, file and line.
 - Snapshot of the example's canonical JSON, so any change to the build is visible in review.
-- First conformance vectors: dictionary-in, canonical-JSON-out.
+- First conformance vectors: dictionary-in, canonical-JSON-out (`conformance/build/<case>/dictionary/` and `expected.json`, described in `conformance/README.md`), starting with acme-orders and a minimal dictionary.
+- CLI tests: exit codes and `--json` shape for both commands.
+- ADR check tests: every allowed and blocked transition.
 
 ### Documentation
 
-- Dictionary authoring guide with the example walked through.
-- Lint rule reference (code, meaning, fix).
-- First draft of `AGENTS.md` with naming conventions and change rules.
-- Editor setup for YAML schema validation in VS Code.
+- Dictionary authoring guide with the example walked through (`docs/authoring.md`).
+- Lint rule reference (code, meaning, fix) (`docs/lint-rules.md`).
+- First draft of `AGENTS.md` with naming conventions and change rules, in `examples/acme-orders/dictionary/AGENTS.md`; it becomes the `radd init` template.
+- Editor setup for YAML schema validation in VS Code (`docs/editor-setup.md`), with a checked-in `.vscode/settings.json` mapping the schemas by folder for the Red Hat YAML extension. The schemas avoid 2020-12 keywords that extension does not understand (`unevaluatedProperties`, `$dynamicRef`).
+- Schema `$id`s use `https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/<file>.schema.json` until there is a project domain (a change of URL is its own ADR).
 
 ### Validation checklist for Rommel
 
@@ -146,7 +277,7 @@ At the end of this stage, a dictionary can be authored in YAML with autocomplete
 
 ### Out of scope
 
-CEL evaluation, any .NET code beyond empty projects, the TypeScript client and the plugin protocol.
+CEL evaluation, CEL parsing and type checking, any .NET code beyond empty projects, the TypeScript client, the plugin protocol, materializing audit and soft-delete columns, and publishing the schema anywhere other than the repo.
 
 ## Stage 2: Spikes
 
