@@ -1,0 +1,59 @@
+country.displayLabel: Bansa
+country.code.displayLabel: Kodigo
+country.name.displayLabel: Pangalan
+
+province.displayLabel: Lalawigan
+province.id.displayLabel: ID
+province.countryCode.displayLabel: Bansa
+province.name.displayLabel: Pangalan
+
+customer.displayLabel: Kustomer
+customer.pluralLabel: Mga kustomer
+customer.id.displayLabel: ID
+customer.name.displayLabel: Pangalan
+customer.email.displayLabel: Email
+customer.email.uniqueCustomerEmail: Nakarehistro na ang email na ito.
+customer.gender.displayLabel: Kasarian
+customer.countryCode.displayLabel: Bansa
+customer.provinceId.displayLabel: Lalawigan
+customer.creditLimit.displayLabel: Limitasyon ng kredito
+customer.creditLimit.shortLabel: Limitasyon
+customer.creditLimit.displayHint: "Pinakamataas na balanseng hindi pa bayad, sa piso. <b>Kailangan ng pag-apruba</b> kapag lampas sa 1,000,000."
+customer.mobileNumber.displayLabel: Numero ng mobile
+customer.mobileNumber.placeholder: 0917-123-4567
+customer.mobileNumber.pattern: Maglagay ng 11-digit na numero ng mobile na nagsisimula sa 09.
+customer.vipNotes.displayLabel: Mga tala para sa VIP
+customer.vipNotes.recommended: Magdagdag ng tala para sa mga kustomer na may kreditong higit sa 1,000,000.
+
+order.displayLabel: Order
+order.id.displayLabel: ID
+order.customerId.displayLabel: Kustomer
+order.orderDate.displayLabel: Petsa ng order
+order.notes.displayLabel: Mga tala
+
+orderLine.displayLabel: Linya ng order
+orderLine.id.displayLabel: ID
+orderLine.orderId.displayLabel: Order
+orderLine.lineNumber.displayLabel: Linya
+orderLine.productName.displayLabel: Produkto
+orderLine.quantity.displayLabel: Dami
+orderLine.unitPrice.displayLabel: Presyo bawat isa
+orderLine.lineTotal.displayLabel: Kabuuan ng linya
+
+gender.male: Lalaki
+gender.female: Babae
+gender.unspecified: Hindi tinukoy
+
+radd.required: Kailangan ang {label}.
+radd.type: Hindi wasto ang halaga ng {label}.
+radd.maxLength: Ang {label} ay hindi dapat lumampas sa {max} na karakter.
+radd.minLength: Ang {label} ay dapat may hindi bababa sa {min} na karakter.
+radd.min: Ang {label} ay dapat hindi bababa sa {min}.
+radd.max: Ang {label} ay hindi dapat lumampas sa {max}.
+radd.precision: Ang {label} ay hanggang {precision} na digit lamang.
+radd.scale: Ang {label} ay hanggang {scale} na decimal place lamang.
+radd.format.email: Ang {label} ay dapat isang wastong email address.
+radd.format.url: Ang {label} ay dapat isang wastong URL.
+radd.format.phone: Ang {label} ay dapat isang wastong numero ng telepono.
+radd.pattern: Hindi tama ang format ng {label}.
+radd.lookup: Hindi pinapayagang halaga ang {label}.

@@ -1,0 +1,7 @@
+name: acme-orders
+description: Customers and their orders for Acme, the RADD example system.
+formatVersion: 1
+locales: { default: en, supported: [en, fil] }
+databases: [sqlite]
+expressions: { extensions: [strings] }
+lookups: { defaultTtl: 10m }

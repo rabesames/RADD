@@ -1,0 +1,4 @@
+validators:
+  uniqueCustomerEmail:
+    scope: field
+    description: Rejects an email already used by another customer, ignoring case.

@@ -1,0 +1,8 @@
+domainType: MobileNumber
+description: A Philippine mobile number, stored as 11 digits starting with 09. Personal data.
+type: string
+maxLength: 11
+pattern: "^09[0-9]{9}$"
+tags: [pii]
+displayFormat: { kind: text, mask: "0000-000-0000" }
+editFormat: { kind: mask, pattern: "0000-000-0000", storeLiterals: false }

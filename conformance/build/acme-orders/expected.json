@@ -1,0 +1,976 @@
+{
+  "calculators": {},
+  "databases": [
+    "sqlite"
+  ],
+  "description": "Customers and their orders for Acme, the RADD example system.",
+  "entities": {
+    "Country": {
+      "apiName": "country",
+      "audit": false,
+      "dbName": "Countries",
+      "description": "A country customers can live in, identified by its ISO 3166-1 alpha-2 code.",
+      "displayLabel": "country.displayLabel",
+      "fieldOrder": [
+        "code",
+        "name"
+      ],
+      "fields": {
+        "code": {
+          "apiName": "code",
+          "dbName": "IsoCode",
+          "description": "ISO 3166-1 alpha-2 country code, for example PH.",
+          "displayLabel": "country.code.displayLabel",
+          "editFormat": {
+            "case": "upper",
+            "kind": "text",
+            "trim": true
+          },
+          "maxLength": 2,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "minLength": "radd.minLength",
+            "pattern": "radd.pattern",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "minLength": 2,
+          "pattern": "^[A-Z]{2}$",
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        },
+        "name": {
+          "apiName": "name",
+          "dbName": "Name",
+          "description": "Country name in English.",
+          "displayLabel": "country.name.displayLabel",
+          "maxLength": 100,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        }
+      },
+      "indexes": [],
+      "primaryKey": [
+        "code"
+      ],
+      "relationships": {},
+      "rules": [],
+      "softDelete": false,
+      "validators": []
+    },
+    "Customer": {
+      "apiName": "customer",
+      "audit": false,
+      "dbName": "Customer",
+      "description": "A person or company that places orders.",
+      "displayLabel": "customer.displayLabel",
+      "fieldOrder": [
+        "id",
+        "name",
+        "email",
+        "mobileNumber",
+        "gender",
+        "countryCode",
+        "provinceId",
+        "creditLimit",
+        "vipNotes"
+      ],
+      "fields": {
+        "countryCode": {
+          "apiName": "countryCode",
+          "dbName": "CountryCode",
+          "description": "Country of the billing address.",
+          "displayLabel": "customer.countryCode.displayLabel",
+          "lookup": {
+            "cache": "static",
+            "dependsOn": [],
+            "display": "name",
+            "entity": "Country",
+            "search": false,
+            "value": "code"
+          },
+          "maxLength": 2,
+          "messages": {
+            "lookup": "radd.lookup",
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "references": {
+            "entity": "Country",
+            "field": "code",
+            "onDelete": "restrict"
+          },
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        },
+        "creditLimit": {
+          "apiName": "creditLimit",
+          "dbName": "CreditLimit",
+          "description": "Maximum unpaid balance allowed before new orders are held.",
+          "displayFormat": {
+            "kind": "number",
+            "pattern": "#,##0.00"
+          },
+          "displayHint": "customer.creditLimit.displayHint",
+          "displayLabel": "customer.creditLimit.displayLabel",
+          "domain": "Money",
+          "editFormat": {
+            "allowNegative": true,
+            "decimals": 2,
+            "grouping": false,
+            "kind": "number"
+          },
+          "max": 10000000,
+          "messages": {
+            "max": "radd.max",
+            "min": "radd.min",
+            "precision": "radd.precision",
+            "scale": "radd.scale",
+            "type": "radd.type"
+          },
+          "min": 0,
+          "precision": 12,
+          "readOnly": "never",
+          "required": false,
+          "rules": [],
+          "scale": 2,
+          "shortLabel": "customer.creditLimit.shortLabel",
+          "tags": [
+            "financial"
+          ],
+          "type": "decimal",
+          "validators": []
+        },
+        "email": {
+          "apiName": "email",
+          "dbName": "Email",
+          "description": "Contact email; must be unique across customers.",
+          "displayLabel": "customer.email.displayLabel",
+          "domain": "Email",
+          "format": "email",
+          "maxLength": 254,
+          "messages": {
+            "format": "radd.format.email",
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "tags": [
+            "pii"
+          ],
+          "type": "string",
+          "validators": [
+            {
+              "code": "customer.email.uniqueCustomerEmail",
+              "message": "customer.email.uniqueCustomerEmail",
+              "name": "uniqueCustomerEmail",
+              "params": {},
+              "severity": "error"
+            }
+          ]
+        },
+        "gender": {
+          "apiName": "gender",
+          "dbName": "Gender",
+          "description": "Optional; only for individual customers.",
+          "displayLabel": "customer.gender.displayLabel",
+          "lookup": {
+            "dependsOn": [],
+            "list": "gender"
+          },
+          "maxLength": 1,
+          "messages": {
+            "lookup": "radd.lookup",
+            "maxLength": "radd.maxLength",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": false,
+          "rules": [],
+          "tags": [
+            "pii"
+          ],
+          "type": "string",
+          "validators": []
+        },
+        "id": {
+          "apiName": "id",
+          "dbName": "Id",
+          "description": "Surrogate key, generated by the application on create.",
+          "displayLabel": "customer.id.displayLabel",
+          "generated": {
+            "kind": "uuid"
+          },
+          "messages": {
+            "type": "radd.type"
+          },
+          "readOnly": "always",
+          "required": false,
+          "rules": [],
+          "type": "guid",
+          "validators": []
+        },
+        "mobileNumber": {
+          "apiName": "mobileNumber",
+          "dbName": "MobileNumber",
+          "description": "Philippine mobile number for delivery updates, stored as 11 digits.",
+          "displayFormat": {
+            "kind": "text",
+            "mask": "0000-000-0000"
+          },
+          "displayLabel": "customer.mobileNumber.displayLabel",
+          "domain": "MobileNumber",
+          "editFormat": {
+            "kind": "mask",
+            "pattern": "0000-000-0000",
+            "storeLiterals": false
+          },
+          "maxLength": 11,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "pattern": "customer.mobileNumber.pattern",
+            "type": "radd.type"
+          },
+          "pattern": "^09[0-9]{9}$",
+          "placeholder": "customer.mobileNumber.placeholder",
+          "readOnly": "never",
+          "required": false,
+          "rules": [],
+          "tags": [
+            "pii"
+          ],
+          "type": "string",
+          "validators": []
+        },
+        "name": {
+          "apiName": "name",
+          "dbName": "Name",
+          "description": "Full name of the person, or the registered company name.",
+          "displayLabel": "customer.name.displayLabel",
+          "maxLength": 120,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "tags": [
+            "pii"
+          ],
+          "type": "string",
+          "validators": []
+        },
+        "provinceId": {
+          "apiName": "provinceId",
+          "dbName": "ProvinceId",
+          "description": "Province of the billing address; must belong to the chosen country.",
+          "displayLabel": "customer.provinceId.displayLabel",
+          "lookup": {
+            "cache": "ttl",
+            "dependsOn": [
+              "countryCode"
+            ],
+            "display": "name",
+            "entity": "Province",
+            "filter": "row.countryCode == countryCode",
+            "search": false,
+            "ttlSeconds": 600,
+            "value": "id"
+          },
+          "messages": {
+            "lookup": "radd.lookup",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "references": {
+            "entity": "Province",
+            "field": "id",
+            "onDelete": "restrict"
+          },
+          "required": false,
+          "rules": [],
+          "type": "integer",
+          "validators": []
+        },
+        "vipNotes": {
+          "apiName": "vipNotes",
+          "dbName": "VipNotes",
+          "description": "Account manager notes, recommended for customers with very high credit limits.",
+          "displayLabel": "customer.vipNotes.displayLabel",
+          "messages": {
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": false,
+          "rules": [
+            {
+              "code": "customer.vipNotes.recommended",
+              "effects": {
+                "required": true
+              },
+              "kind": "conditional",
+              "message": "customer.vipNotes.recommended",
+              "severity": "warning",
+              "when": "creditLimit > 1000000.0"
+            }
+          ],
+          "type": "text",
+          "validators": []
+        }
+      },
+      "indexes": [],
+      "pluralLabel": "customer.pluralLabel",
+      "primaryKey": [
+        "id"
+      ],
+      "relationships": {
+        "orders": {
+          "entity": "Order",
+          "foreignKey": "customerId",
+          "kind": "oneToMany"
+        }
+      },
+      "rules": [],
+      "softDelete": false,
+      "validators": []
+    },
+    "Order": {
+      "apiName": "order",
+      "audit": true,
+      "dbName": "Order",
+      "description": "An order placed by a customer.",
+      "displayLabel": "order.displayLabel",
+      "fieldOrder": [
+        "id",
+        "customerId",
+        "orderDate",
+        "notes"
+      ],
+      "fields": {
+        "customerId": {
+          "apiName": "customerId",
+          "dbName": "CustomerId",
+          "description": "The customer who placed the order; cannot change after create.",
+          "displayLabel": "order.customerId.displayLabel",
+          "lookup": {
+            "cache": "dynamic",
+            "dependsOn": [],
+            "display": "name",
+            "entity": "Customer",
+            "search": true,
+            "value": "id"
+          },
+          "messages": {
+            "lookup": "radd.lookup",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "onUpdate",
+          "references": {
+            "entity": "Customer",
+            "field": "id",
+            "onDelete": "restrict"
+          },
+          "required": true,
+          "rules": [],
+          "type": "guid",
+          "validators": []
+        },
+        "id": {
+          "apiName": "id",
+          "dbName": "Id",
+          "description": "Surrogate key, generated by the application on create.",
+          "displayLabel": "order.id.displayLabel",
+          "generated": {
+            "kind": "uuid"
+          },
+          "messages": {
+            "type": "radd.type"
+          },
+          "readOnly": "always",
+          "required": false,
+          "rules": [],
+          "type": "guid",
+          "validators": []
+        },
+        "notes": {
+          "apiName": "notes",
+          "dbName": "Notes",
+          "description": "Free-text notes from the customer.",
+          "displayLabel": "order.notes.displayLabel",
+          "messages": {
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": false,
+          "rules": [],
+          "type": "text",
+          "validators": []
+        },
+        "orderDate": {
+          "apiName": "orderDate",
+          "dbName": "OrderDate",
+          "description": "Date the order was placed.",
+          "displayFormat": {
+            "kind": "date",
+            "style": "medium"
+          },
+          "displayLabel": "order.orderDate.displayLabel",
+          "editFormat": {
+            "kind": "date",
+            "pattern": "yyyy-MM-dd"
+          },
+          "messages": {
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "date",
+          "validators": []
+        }
+      },
+      "indexes": [],
+      "primaryKey": [
+        "id"
+      ],
+      "relationships": {
+        "customer": {
+          "entity": "Customer",
+          "foreignKey": "customerId",
+          "kind": "manyToOne"
+        },
+        "lines": {
+          "entity": "OrderLine",
+          "foreignKey": "orderId",
+          "kind": "oneToMany"
+        }
+      },
+      "rules": [],
+      "softDelete": false,
+      "validators": []
+    },
+    "OrderLine": {
+      "apiName": "orderLine",
+      "audit": false,
+      "dbName": "OrderLine",
+      "description": "One product line of an order.",
+      "displayLabel": "orderLine.displayLabel",
+      "fieldOrder": [
+        "id",
+        "orderId",
+        "lineNumber",
+        "productName",
+        "quantity",
+        "unitPrice",
+        "lineTotal"
+      ],
+      "fields": {
+        "id": {
+          "apiName": "id",
+          "dbName": "Id",
+          "description": "Surrogate key, generated by the application on create.",
+          "displayLabel": "orderLine.id.displayLabel",
+          "generated": {
+            "kind": "uuid"
+          },
+          "messages": {
+            "type": "radd.type"
+          },
+          "readOnly": "always",
+          "required": false,
+          "rules": [],
+          "type": "guid",
+          "validators": []
+        },
+        "lineNumber": {
+          "apiName": "lineNumber",
+          "dbName": "LineNumber",
+          "description": "Position of the line within the order, starting at 1.",
+          "displayLabel": "orderLine.lineNumber.displayLabel",
+          "messages": {
+            "min": "radd.min",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "min": 1,
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "integer",
+          "validators": []
+        },
+        "lineTotal": {
+          "apiName": "lineTotal",
+          "computed": {
+            "expression": "dec.mul(quantity, unitPrice)",
+            "persisted": true,
+            "source": "application"
+          },
+          "dbName": "LineTotal",
+          "description": "quantity times unitPrice, computed on every save.",
+          "displayLabel": "orderLine.lineTotal.displayLabel",
+          "messages": {
+            "precision": "radd.precision",
+            "scale": "radd.scale",
+            "type": "radd.type"
+          },
+          "precision": 14,
+          "readOnly": "always",
+          "required": false,
+          "rules": [],
+          "scale": 2,
+          "type": "decimal",
+          "validators": []
+        },
+        "orderId": {
+          "apiName": "orderId",
+          "dbName": "OrderId",
+          "description": "The order this line belongs to.",
+          "displayLabel": "orderLine.orderId.displayLabel",
+          "messages": {
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "references": {
+            "entity": "Order",
+            "field": "id",
+            "onDelete": "cascade"
+          },
+          "required": true,
+          "rules": [],
+          "type": "guid",
+          "validators": []
+        },
+        "productName": {
+          "apiName": "productName",
+          "dbName": "ProductName",
+          "description": "Name of the product as shown on the order.",
+          "displayLabel": "orderLine.productName.displayLabel",
+          "maxLength": 120,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        },
+        "quantity": {
+          "apiName": "quantity",
+          "dbName": "Quantity",
+          "description": "Number of units ordered.",
+          "displayLabel": "orderLine.quantity.displayLabel",
+          "messages": {
+            "min": "radd.min",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "min": 1,
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "integer",
+          "validators": []
+        },
+        "unitPrice": {
+          "apiName": "unitPrice",
+          "dbName": "UnitPrice",
+          "description": "Price of one unit at the time of ordering.",
+          "displayFormat": {
+            "kind": "number",
+            "pattern": "#,##0.00"
+          },
+          "displayLabel": "orderLine.unitPrice.displayLabel",
+          "domain": "Money",
+          "editFormat": {
+            "allowNegative": true,
+            "decimals": 2,
+            "grouping": false,
+            "kind": "number"
+          },
+          "messages": {
+            "min": "radd.min",
+            "precision": "radd.precision",
+            "required": "radd.required",
+            "scale": "radd.scale",
+            "type": "radd.type"
+          },
+          "min": 0,
+          "precision": 12,
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "scale": 2,
+          "tags": [
+            "financial"
+          ],
+          "type": "decimal",
+          "validators": []
+        }
+      },
+      "indexes": [
+        {
+          "dbName": "UX_OrderLine_OrderId_LineNumber",
+          "description": "Line numbers are unique within an order.",
+          "fields": [
+            "orderId",
+            "lineNumber"
+          ],
+          "unique": true
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "relationships": {
+        "order": {
+          "entity": "Order",
+          "foreignKey": "orderId",
+          "kind": "manyToOne"
+        }
+      },
+      "rules": [],
+      "softDelete": false,
+      "validators": []
+    },
+    "Province": {
+      "apiName": "province",
+      "audit": false,
+      "dbName": "Province",
+      "description": "A first-level administrative division of a country.",
+      "displayLabel": "province.displayLabel",
+      "fieldOrder": [
+        "id",
+        "countryCode",
+        "name"
+      ],
+      "fields": {
+        "countryCode": {
+          "apiName": "countryCode",
+          "dbName": "CountryCode",
+          "description": "Country the province belongs to.",
+          "displayLabel": "province.countryCode.displayLabel",
+          "maxLength": 2,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "references": {
+            "entity": "Country",
+            "field": "code",
+            "onDelete": "restrict"
+          },
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        },
+        "id": {
+          "apiName": "id",
+          "dbName": "Id",
+          "description": "Surrogate key, assigned by the database (1, 2, 3, ...).",
+          "displayLabel": "province.id.displayLabel",
+          "generated": {
+            "increment": 1,
+            "kind": "identity",
+            "noReuse": false,
+            "seed": 1
+          },
+          "messages": {
+            "type": "radd.type"
+          },
+          "readOnly": "always",
+          "required": false,
+          "rules": [],
+          "type": "integer",
+          "validators": []
+        },
+        "name": {
+          "apiName": "name",
+          "dbName": "Name",
+          "description": "Province name.",
+          "displayLabel": "province.name.displayLabel",
+          "maxLength": 100,
+          "messages": {
+            "maxLength": "radd.maxLength",
+            "required": "radd.required",
+            "type": "radd.type"
+          },
+          "readOnly": "never",
+          "required": true,
+          "rules": [],
+          "type": "string",
+          "validators": []
+        }
+      },
+      "indexes": [
+        {
+          "dbName": "UX_Province_CountryCode_Name",
+          "description": "Province names are unique within a country.",
+          "fields": [
+            "countryCode",
+            "name"
+          ],
+          "unique": true
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "relationships": {
+        "country": {
+          "entity": "Country",
+          "foreignKey": "countryCode",
+          "kind": "manyToOne"
+        }
+      },
+      "rules": [],
+      "softDelete": false,
+      "validators": []
+    }
+  },
+  "expressions": {
+    "extensions": [
+      "strings"
+    ]
+  },
+  "formatVersion": 1,
+  "functions": {},
+  "locales": {
+    "default": "en",
+    "supported": [
+      "en",
+      "fil"
+    ]
+  },
+  "lookupDefaults": {
+    "ttlSeconds": 600
+  },
+  "lookups": {
+    "gender": {
+      "description": "Gender as stated by the customer.",
+      "items": [
+        {
+          "active": true,
+          "code": "M",
+          "label": "gender.male"
+        },
+        {
+          "active": true,
+          "code": "F",
+          "label": "gender.female"
+        },
+        {
+          "active": false,
+          "code": "X",
+          "label": "gender.unspecified"
+        }
+      ],
+      "valueType": "string"
+    }
+  },
+  "messages": {
+    "en": {
+      "country.code.displayLabel": "Code",
+      "country.displayLabel": "Country",
+      "country.name.displayLabel": "Name",
+      "customer.countryCode.displayLabel": "Country",
+      "customer.creditLimit.displayHint": "Maximum unpaid balance, in pesos. <b>Requires approval</b> above 1,000,000.",
+      "customer.creditLimit.displayLabel": "Credit limit",
+      "customer.creditLimit.shortLabel": "Limit",
+      "customer.displayLabel": "Customer",
+      "customer.email.displayLabel": "Email",
+      "customer.email.uniqueCustomerEmail": "This email is already registered.",
+      "customer.gender.displayLabel": "Gender",
+      "customer.id.displayLabel": "ID",
+      "customer.mobileNumber.displayLabel": "Mobile number",
+      "customer.mobileNumber.pattern": "Enter an 11-digit mobile number starting with 09.",
+      "customer.mobileNumber.placeholder": "0917-123-4567",
+      "customer.name.displayLabel": "Name",
+      "customer.pluralLabel": "Customers",
+      "customer.provinceId.displayLabel": "Province",
+      "customer.vipNotes.displayLabel": "VIP notes",
+      "customer.vipNotes.recommended": "Add notes for customers above 1,000,000 credit.",
+      "gender.female": "Female",
+      "gender.male": "Male",
+      "gender.unspecified": "Unspecified",
+      "order.customerId.displayLabel": "Customer",
+      "order.displayLabel": "Order",
+      "order.id.displayLabel": "ID",
+      "order.notes.displayLabel": "Notes",
+      "order.orderDate.displayLabel": "Order date",
+      "orderLine.displayLabel": "Order line",
+      "orderLine.id.displayLabel": "ID",
+      "orderLine.lineNumber.displayLabel": "Line",
+      "orderLine.lineTotal.displayLabel": "Line total",
+      "orderLine.orderId.displayLabel": "Order",
+      "orderLine.productName.displayLabel": "Product",
+      "orderLine.quantity.displayLabel": "Quantity",
+      "orderLine.unitPrice.displayLabel": "Unit price",
+      "province.countryCode.displayLabel": "Country",
+      "province.displayLabel": "Province",
+      "province.id.displayLabel": "ID",
+      "province.name.displayLabel": "Name",
+      "radd.format.email": "{label} must be a valid email address.",
+      "radd.format.phone": "{label} must be a valid phone number.",
+      "radd.format.url": "{label} must be a valid URL.",
+      "radd.lookup": "{label} is not an allowed value.",
+      "radd.max": "{label} must be at most {max}.",
+      "radd.maxLength": "{label} must be at most {max} characters.",
+      "radd.min": "{label} must be at least {min}.",
+      "radd.minLength": "{label} must be at least {min} characters.",
+      "radd.pattern": "{label} is not in the expected format.",
+      "radd.precision": "{label} must have at most {precision} digits.",
+      "radd.required": "{label} is required.",
+      "radd.scale": "{label} must have at most {scale} decimal places.",
+      "radd.type": "{label} has an invalid value."
+    },
+    "fil": {
+      "country.code.displayLabel": "Kodigo",
+      "country.displayLabel": "Bansa",
+      "country.name.displayLabel": "Pangalan",
+      "customer.countryCode.displayLabel": "Bansa",
+      "customer.creditLimit.displayHint": "Pinakamataas na balanseng hindi pa bayad, sa piso. <b>Kailangan ng pag-apruba</b> kapag lampas sa 1,000,000.",
+      "customer.creditLimit.displayLabel": "Limitasyon ng kredito",
+      "customer.creditLimit.shortLabel": "Limitasyon",
+      "customer.displayLabel": "Kustomer",
+      "customer.email.displayLabel": "Email",
+      "customer.email.uniqueCustomerEmail": "Nakarehistro na ang email na ito.",
+      "customer.gender.displayLabel": "Kasarian",
+      "customer.id.displayLabel": "ID",
+      "customer.mobileNumber.displayLabel": "Numero ng mobile",
+      "customer.mobileNumber.pattern": "Maglagay ng 11-digit na numero ng mobile na nagsisimula sa 09.",
+      "customer.mobileNumber.placeholder": "0917-123-4567",
+      "customer.name.displayLabel": "Pangalan",
+      "customer.pluralLabel": "Mga kustomer",
+      "customer.provinceId.displayLabel": "Lalawigan",
+      "customer.vipNotes.displayLabel": "Mga tala para sa VIP",
+      "customer.vipNotes.recommended": "Magdagdag ng tala para sa mga kustomer na may kreditong higit sa 1,000,000.",
+      "gender.female": "Babae",
+      "gender.male": "Lalaki",
+      "gender.unspecified": "Hindi tinukoy",
+      "order.customerId.displayLabel": "Kustomer",
+      "order.displayLabel": "Order",
+      "order.id.displayLabel": "ID",
+      "order.notes.displayLabel": "Mga tala",
+      "order.orderDate.displayLabel": "Petsa ng order",
+      "orderLine.displayLabel": "Linya ng order",
+      "orderLine.id.displayLabel": "ID",
+      "orderLine.lineNumber.displayLabel": "Linya",
+      "orderLine.lineTotal.displayLabel": "Kabuuan ng linya",
+      "orderLine.orderId.displayLabel": "Order",
+      "orderLine.productName.displayLabel": "Produkto",
+      "orderLine.quantity.displayLabel": "Dami",
+      "orderLine.unitPrice.displayLabel": "Presyo bawat isa",
+      "province.countryCode.displayLabel": "Bansa",
+      "province.displayLabel": "Lalawigan",
+      "province.id.displayLabel": "ID",
+      "province.name.displayLabel": "Pangalan",
+      "radd.format.email": "Ang {label} ay dapat isang wastong email address.",
+      "radd.format.phone": "Ang {label} ay dapat isang wastong numero ng telepono.",
+      "radd.format.url": "Ang {label} ay dapat isang wastong URL.",
+      "radd.lookup": "Hindi pinapayagang halaga ang {label}.",
+      "radd.max": "Ang {label} ay hindi dapat lumampas sa {max}.",
+      "radd.maxLength": "Ang {label} ay hindi dapat lumampas sa {max} na karakter.",
+      "radd.min": "Ang {label} ay dapat hindi bababa sa {min}.",
+      "radd.minLength": "Ang {label} ay dapat may hindi bababa sa {min} na karakter.",
+      "radd.pattern": "Hindi tama ang format ng {label}.",
+      "radd.precision": "Ang {label} ay hanggang {precision} na digit lamang.",
+      "radd.required": "Kailangan ang {label}.",
+      "radd.scale": "Ang {label} ay hanggang {scale} na decimal place lamang.",
+      "radd.type": "Hindi wasto ang halaga ng {label}."
+    }
+  },
+  "name": "acme-orders",
+  "types": {
+    "Email": {
+      "description": "An email address. Personal data.",
+      "format": "email",
+      "maxLength": 254,
+      "rules": [],
+      "tags": [
+        "pii"
+      ],
+      "type": "string",
+      "validators": []
+    },
+    "MobileNumber": {
+      "description": "A Philippine mobile number, stored as 11 digits starting with 09. Personal data.",
+      "displayFormat": {
+        "kind": "text",
+        "mask": "0000-000-0000"
+      },
+      "editFormat": {
+        "kind": "mask",
+        "pattern": "0000-000-0000",
+        "storeLiterals": false
+      },
+      "maxLength": 11,
+      "pattern": "^09[0-9]{9}$",
+      "rules": [],
+      "tags": [
+        "pii"
+      ],
+      "type": "string",
+      "validators": []
+    },
+    "Money": {
+      "description": "An amount in Philippine pesos, to the centavo.",
+      "displayFormat": {
+        "kind": "number",
+        "pattern": "#,##0.00"
+      },
+      "editFormat": {
+        "allowNegative": true,
+        "decimals": 2,
+        "grouping": false,
+        "kind": "number"
+      },
+      "precision": 12,
+      "rules": [],
+      "scale": 2,
+      "tags": [
+        "financial"
+      ],
+      "type": "decimal",
+      "validators": []
+    }
+  },
+  "validators": {
+    "uniqueCustomerEmail": {
+      "description": "Rejects an email already used by another customer, ignoring case.",
+      "parameters": [],
+      "scope": "field"
+    }
+  },
+  "version": "sha256:b0b7a8ab0313a5cccce54bd8c9ba91ffb6b1e9473049b5a1a9c8f2601e10e0aa"
+}

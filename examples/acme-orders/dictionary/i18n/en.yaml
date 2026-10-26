@@ -1,0 +1,45 @@
+country.displayLabel: Country
+country.code.displayLabel: Code
+country.name.displayLabel: Name
+
+province.displayLabel: Province
+province.id.displayLabel: ID
+province.countryCode.displayLabel: Country
+province.name.displayLabel: Name
+
+customer.displayLabel: Customer
+customer.pluralLabel: Customers
+customer.id.displayLabel: ID
+customer.name.displayLabel: Name
+customer.email.displayLabel: Email
+customer.email.uniqueCustomerEmail: This email is already registered.
+customer.gender.displayLabel: Gender
+customer.countryCode.displayLabel: Country
+customer.provinceId.displayLabel: Province
+customer.creditLimit.displayLabel: Credit limit
+customer.creditLimit.shortLabel: Limit
+customer.creditLimit.displayHint: "Maximum unpaid balance, in pesos. <b>Requires approval</b> above 1,000,000."
+customer.mobileNumber.displayLabel: Mobile number
+customer.mobileNumber.placeholder: 0917-123-4567
+customer.mobileNumber.pattern: Enter an 11-digit mobile number starting with 09.
+customer.vipNotes.displayLabel: VIP notes
+customer.vipNotes.recommended: Add notes for customers above 1,000,000 credit.
+
+order.displayLabel: Order
+order.id.displayLabel: ID
+order.customerId.displayLabel: Customer
+order.orderDate.displayLabel: Order date
+order.notes.displayLabel: Notes
+
+orderLine.displayLabel: Order line
+orderLine.id.displayLabel: ID
+orderLine.orderId.displayLabel: Order
+orderLine.lineNumber.displayLabel: Line
+orderLine.productName.displayLabel: Product
+orderLine.quantity.displayLabel: Quantity
+orderLine.unitPrice.displayLabel: Unit price
+orderLine.lineTotal.displayLabel: Line total
+
+gender.male: Male
+gender.female: Female
+gender.unspecified: Unspecified
