@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { build } from "../src/index.js";
 import { writeDictionary } from "./helpers.js";
 
+// biome-ignore lint/suspicious/noExplicitAny: the tests read deep into the canonical JSON.
 type Json = Record<string, any>;
 
 const DICT = {

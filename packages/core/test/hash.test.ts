@@ -54,6 +54,7 @@ describe("canonicalize (RFC 8785)", () => {
   it("matches the RFC 8785 example for numbers and strings", () => {
     expect(
       canonicalize({
+        // biome-ignore lint/correctness/noPrecisionLoss: RFC 8785 test vector; the rounding is the point.
         numbers: [333333333.33333329, 1e30, 4.5, 2e-3, 0.000000000000000000000000001],
       }),
     ).toBe('{"numbers":[333333333.3333333,1e+30,4.5,0.002,1e-27]}');
