@@ -25,6 +25,18 @@ The first stack is React + TypeScript, C# / ASP.NET Core with EF Core, and SQLit
 - Backends and databases other than C# / EF Core and SQLite (the design must not block them).
 - Sharing one dictionary across several systems or services; each dictionary serves exactly one system.
 
+## Why RADD: the problems it solves
+
+RADD comes from problems seen repeatedly across several companies. Each one maps to a specific part of the design, and each is a test RADD must pass.
+
+| Problem seen in practice | How RADD addresses it |
+| --- | --- |
+| Validation is duplicated in the front end and the API, or missing or incomplete in one of them (the API assumes the front end validated, or the reverse) | Rules are defined once in the dictionary. The API always enforces every rule, at the boundary and again at save, whatever the client did. The client runs the same client-safe rules from the same metadata, and the conformance suite proves both give identical results. |
+| Within the front end alone, a field used on several screens has its validation copied into each one | Rules belong to the field (`Customer.email`) or its domain type (`Email`), not to a screen. Every form asks `@radd/client` for that field's rules, so a change in the dictionary reaches every screen at once. |
+| Tables and columns are undocumented; nobody can say what a table or column is for | Every entity and field must have a `description`, and lint fails without one. Tags mark personal and financial data. `radd docs` generates a browsable reference with ERDs, and DBML export is planned so the model can be viewed in standard tools. |
+| Rewriting one layer means re-implementing all its validation from scratch | The rules live in the dictionary, not in any layer's code. A rewritten front end, API or database inherits them; a new runtime implements the published contract and passes the conformance suite, and CEL expressions run unchanged in every language. |
+| Attempts to remove duplication are haphazard, one-off solutions | RADD is one standard approach: a schema-validated format, a published contract per runtime, a conformance suite, and ADRs recording every design decision, so each project does not reinvent its own. |
+
 ## Architecture
 
 ```mermaid
@@ -502,7 +514,7 @@ Spikes come first because each can change the design; the build phases follow. T
 5. **Migrations:** `radd db diff` with change report, data checks and destructive-change gating.
 6. **AI layer:** MCP server, `radd docs` with ERDs, AGENTS.md, PR review workflow.
 
-After v1: the UI component project (MUI or Ant Design), SQL Server and Postgres adapters, Java and Python runtimes, reverse-engineering existing databases, field-level security, multi-tenancy.
+After v1: the UI component project (MUI or Ant Design), DBML export (`radd gen dbml`), SQL Server and Postgres adapters, Java and Python runtimes, reverse-engineering existing databases, field-level security, multi-tenancy.
 
 ## Decisions
 
