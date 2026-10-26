@@ -77,7 +77,8 @@ function classify(path: string): { kind: FileKind; locale?: string } | undefined
   const parts = path.split("/");
   const folder = FOLDERS[parts[0] ?? ""];
   if (folder && parts.length > 1) return { kind: folder };
-  if (parts[0] === "i18n" && parts.length === 2) return { kind: "i18n", locale: (parts[1] ?? "").replace(/\.yaml$/, "") };
+  if (parts[0] === "i18n" && parts.length === 2)
+    return { kind: "i18n", locale: (parts[1] ?? "").replace(/\.yaml$/, "") };
   if (parts[0] === "i18n" && parts.length > 2) return { kind: "i18n", locale: parts[1] ?? "" };
   return undefined;
 }
@@ -101,7 +102,13 @@ export function loadDictionary(root: string): LoadedDictionary {
 
   for (const path of walk(root)) {
     if (path.endsWith(".yml")) {
-      diag.push({ code: "RADD104", file: path, line: 1, column: 1, message: "Use the .yaml extension; .yml files are ignored." });
+      diag.push({
+        code: "RADD104",
+        file: path,
+        line: 1,
+        column: 1,
+        message: "Use the .yaml extension; .yml files are ignored.",
+      });
       continue;
     }
     if (!path.endsWith(".yaml")) continue;
@@ -138,7 +145,8 @@ export function loadDictionary(root: string): LoadedDictionary {
 
 function register(result: LoadedDictionary, file: SourceFile): void {
   const data = file.data as Record<string, unknown> | undefined;
-  const nameOf = (key: string) => (data && typeof data[key] === "string" ? (data[key] as string) : undefined);
+  const nameOf = (key: string) =>
+    data && typeof data[key] === "string" ? (data[key] as string) : undefined;
 
   if (!file.valid) {
     for (const key of ["entity", "domainType", "lookup"]) {
@@ -166,7 +174,12 @@ function register(result: LoadedDictionary, file: SourceFile): void {
 
   switch (file.kind) {
     case "dictionary":
-      result.dictionary = { name: "dictionary", data: data as unknown as RawDictionary, file, path: [] };
+      result.dictionary = {
+        name: "dictionary",
+        data: data as unknown as RawDictionary,
+        file,
+        path: [],
+      };
       break;
     case "entity":
       define(result.entities, "entity", "Entity");

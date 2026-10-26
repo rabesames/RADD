@@ -38,7 +38,11 @@ export interface EffectiveField {
   tags: string[];
 }
 
-export function effectiveField(loaded: LoadedDictionary, name: string, raw: RawField): EffectiveField {
+export function effectiveField(
+  loaded: LoadedDictionary,
+  name: string,
+  raw: RawField,
+): EffectiveField {
   const domain = raw.domain ? loaded.types.get(raw.domain) : undefined;
   const d = domain?.data;
   const constraints: RawConstraints = {};
@@ -89,7 +93,12 @@ export function constraintMessages(field: EffectiveField): Map<string, string> {
 }
 
 /** Message-key candidates for a constraint, in resolution order: field, domain type, framework. */
-export function constraintChain(entityName: string, field: EffectiveField, constraint: string, frameworkKey: string): string[] {
+export function constraintChain(
+  entityName: string,
+  field: EffectiveField,
+  constraint: string,
+  frameworkKey: string,
+): string[] {
   const chain = [`${camelCase(entityName)}.${field.name}.${constraint}`];
   if (field.domain) chain.push(`${camelCase(field.domain.name)}.${constraint}`);
   chain.push(frameworkKey);
@@ -111,7 +120,10 @@ export function validatorChain(
   return declared ? [specific, declared] : [specific];
 }
 
-export function firstPresent(chain: readonly string[], messages: ReadonlyMap<string, unknown>): string | undefined {
+export function firstPresent(
+  chain: readonly string[],
+  messages: ReadonlyMap<string, unknown>,
+): string | undefined {
   return chain.find((k) => messages.has(k));
 }
 
@@ -128,7 +140,15 @@ export function primaryKeyOf(raw: { primaryKey: string | string[] }): string[] {
   return Array.isArray(raw.primaryKey) ? raw.primaryKey : [raw.primaryKey];
 }
 
-const STRING_TYPES: ReadonlySet<LogicalType> = new Set(["string", "text", "guid", "date", "time", "datetime", "datetimeOffset"]);
+const STRING_TYPES: ReadonlySet<LogicalType> = new Set([
+  "string",
+  "text",
+  "guid",
+  "date",
+  "time",
+  "datetime",
+  "datetimeOffset",
+]);
 
 /** Whether a literal default fits the field's type. */
 export function literalFits(type: LogicalType, value: unknown): boolean {
@@ -140,7 +160,10 @@ export function literalFits(type: LogicalType, value: unknown): boolean {
 }
 
 /** Field types compatible with a static lookup's value type. */
-export function fitsValueType(type: LogicalType | undefined, valueType: "string" | "integer"): boolean {
+export function fitsValueType(
+  type: LogicalType | undefined,
+  valueType: "string" | "integer",
+): boolean {
   if (type === undefined) return true;
   return valueType === "string" ? type === "string" : type === "integer" || type === "long";
 }

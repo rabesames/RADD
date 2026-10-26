@@ -88,7 +88,10 @@ function formatErrors(errors: ErrorObject[], file: string): PendingDiagnostic[] 
   for (const e of errors) {
     if (e.keyword === "if") continue;
     const owner = combinators.find(
-      (c) => c !== e && e.schemaPath.startsWith(`${c.schemaPath}/`) && e.instancePath.startsWith(c.instancePath),
+      (c) =>
+        c !== e &&
+        e.schemaPath.startsWith(`${c.schemaPath}/`) &&
+        e.instancePath.startsWith(c.instancePath),
     );
     if (owner) continue;
     const path = pathOf(e.instancePath);
@@ -156,7 +159,8 @@ function formatErrors(errors: ErrorObject[], file: string): PendingDiagnostic[] 
           code: "RADD102",
           file,
           path,
-          message: `${describe(e.data)} is not in the expected form. ${firstSentence(e.parentSchema)}`.trim(),
+          message:
+            `${describe(e.data)} is not in the expected form. ${firstSentence(e.parentSchema)}`.trim(),
         });
         break;
       case "propertyNames":
@@ -171,9 +175,14 @@ function formatErrors(errors: ErrorObject[], file: string): PendingDiagnostic[] 
       case "anyOf":
       case "oneOf": {
         const branches = errors.filter(
-          (b) => b !== e && b.schemaPath.startsWith(`${e.schemaPath}/`) && b.instancePath === e.instancePath,
+          (b) =>
+            b !== e &&
+            b.schemaPath.startsWith(`${e.schemaPath}/`) &&
+            b.instancePath === e.instancePath,
         );
-        const missing = branches.filter((b) => b.keyword === "required").map((b) => String(b.params.missingProperty));
+        const missing = branches
+          .filter((b) => b.keyword === "required")
+          .map((b) => String(b.params.missingProperty));
         if (missing.length > 0 && missing.length === branches.length) {
           push({
             code: "RADD102",
@@ -186,19 +195,31 @@ function formatErrors(errors: ErrorObject[], file: string): PendingDiagnostic[] 
                 : `Give exactly one of: ${missing.join(", ")}.`,
           });
         } else if (e.keyword === "oneOf" && branches.length === 0) {
-          push({ code: "RADD102", file, path, atKey: true, message: "Give exactly one of the alternatives, not several." });
+          push({
+            code: "RADD102",
+            file,
+            path,
+            atKey: true,
+            message: "Give exactly one of the alternatives, not several.",
+          });
         } else {
           push({
             code: "RADD102",
             file,
             path,
-            message: `${describe(e.data)} does not match any allowed form. ${firstSentence(e.parentSchema)}`.trim(),
+            message:
+              `${describe(e.data)} does not match any allowed form. ${firstSentence(e.parentSchema)}`.trim(),
           });
         }
         break;
       }
       default:
-        push({ code: "RADD102", file, path, message: `${capitalize(e.message ?? "Invalid value")}.` });
+        push({
+          code: "RADD102",
+          file,
+          path,
+          message: `${capitalize(e.message ?? "Invalid value")}.`,
+        });
     }
   }
   return out;

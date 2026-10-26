@@ -105,7 +105,13 @@ export function parseYaml(
   };
   for (const o of offsets) {
     const pos = lineCounter.linePos(o.offset);
-    diagnostics.push({ code: "RADD101", message: o.message, file: path, line: pos.line, column: pos.col });
+    diagnostics.push({
+      code: "RADD101",
+      message: o.message,
+      file: path,
+      line: pos.line,
+      column: pos.col,
+    });
   }
   return { file, diagnostics };
 }
@@ -129,7 +135,9 @@ export function locate(
     const seg = path[i];
     const last = i === path.length - 1;
     if (isMap(node)) {
-      const pair = node.items.find((p) => isPair(p) && isScalar(p.key) && String(p.key.value) === String(seg));
+      const pair = node.items.find(
+        (p) => isPair(p) && isScalar(p.key) && String(p.key.value) === String(seg),
+      );
       if (!pair) break;
       if (last && atKey) {
         offset = rangeStart(pair.key) ?? offset;

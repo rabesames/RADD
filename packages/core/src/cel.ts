@@ -167,9 +167,10 @@ export function scanCel(source: string): CelScan {
       i += ident[0].length;
       continue;
     }
-    const num = /^(0x[0-9a-fA-F]+u?|[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?u?|\.[0-9]+([eE][+-]?[0-9]+)?)/.exec(
-      source.slice(i),
-    );
+    const num =
+      /^(0x[0-9a-fA-F]+u?|[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?u?|\.[0-9]+([eE][+-]?[0-9]+)?)/.exec(
+        source.slice(i),
+      );
     if (num) {
       tokens.push({ kind: "other", text: num[0], offset: i });
       i += num[0].length;
@@ -203,7 +204,8 @@ export function scanCel(source: string): CelScan {
       // a.b( : a namespaced function when a is a bare identifier, else a member call.
       const ns = tokens[t - 2];
       const beforeNs = tokens[t - 3];
-      const qualified = ns?.kind === "ident" && beforeNs?.text !== "." ? `${ns.text}.${tok.text}` : undefined;
+      const qualified =
+        ns?.kind === "ident" && beforeNs?.text !== "." ? `${ns.text}.${tok.text}` : undefined;
       calls.push(
         qualified
           ? { name: qualified, member: false, offset: ns?.offset ?? tok.offset }
@@ -225,14 +227,27 @@ export type CallCheck =
  * Decides whether a call is allowed. A qualified call (a.b) that is not a known namespaced
  * function is treated as a member call b on the value a.
  */
-export function checkCall(call: CelCall, enabled: ReadonlySet<string>, declared: ReadonlySet<string>): CallCheck {
-  const asMember = call.member ? call.name : call.name.includes(".") ? call.name.split(".")[1] : undefined;
+export function checkCall(
+  call: CelCall,
+  enabled: ReadonlySet<string>,
+  declared: ReadonlySet<string>,
+): CallCheck {
+  const asMember = call.member
+    ? call.name
+    : call.name.includes(".")
+      ? call.name.split(".")[1]
+      : undefined;
   if (!call.member) {
-    if (STANDARD_GLOBALS.has(call.name) || RADD_BUILTINS.has(call.name) || declared.has(call.name)) {
+    if (
+      STANDARD_GLOBALS.has(call.name) ||
+      RADD_BUILTINS.has(call.name) ||
+      declared.has(call.name)
+    ) {
       return { ok: true };
     }
     const ext = extensionOf(call.name, EXTENSION_GLOBALS);
-    if (ext) return enabled.has(ext) ? { ok: true } : { ok: false, reason: "extension", extension: ext };
+    if (ext)
+      return enabled.has(ext) ? { ok: true } : { ok: false, reason: "extension", extension: ext };
     if (!call.name.includes(".")) return { ok: false, reason: "unknown" };
     const ns = call.name.split(".")[0] ?? "";
     if (isKnownNamespace(ns, declared)) return { ok: false, reason: "unknown" };
@@ -247,12 +262,16 @@ export function checkCall(call: CelCall, enabled: ReadonlySet<string>, declared:
   return { ok: false, reason: "extension", extension: exts[0] as CelExtension };
 }
 
-function extensionOf(name: string, table: Record<CelExtension, string[]>): CelExtension | undefined {
+function extensionOf(
+  name: string,
+  table: Record<CelExtension, string[]>,
+): CelExtension | undefined {
   return (Object.keys(table) as CelExtension[]).find((e) => table[e].includes(name));
 }
 
 function isKnownNamespace(ns: string, declared: ReadonlySet<string>): boolean {
   if (ns === "dec") return true;
-  if (Object.values(EXTENSION_GLOBALS).some((names) => names.some((n) => n.startsWith(`${ns}.`)))) return true;
+  if (Object.values(EXTENSION_GLOBALS).some((names) => names.some((n) => n.startsWith(`${ns}.`))))
+    return true;
   return [...declared].some((n) => n.startsWith(`${ns}.`));
 }

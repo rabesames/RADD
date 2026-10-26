@@ -42,7 +42,12 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
   const present = (key: string) => (messages.has(key) ? key : undefined);
   const resolve = (chain: string[]) => firstPresent(chain, messages) ?? chain[chain.length - 1];
 
-  const rule = (r: RawRule, entityName: string, fieldName: string | undefined, field: EffectiveField | undefined): Json => {
+  const rule = (
+    r: RawRule,
+    entityName: string,
+    fieldName: string | undefined,
+    field: EffectiveField | undefined,
+  ): Json => {
     const severity = r.severity ?? "error";
     if (r.expression !== undefined) {
       const message = r.message as string;
@@ -57,21 +62,37 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
       });
     }
     const effects = compact({ required: r.required, readOnly: r.readOnly, visible: r.visible });
-    const out: Json = { kind: "conditional", when: (r.when ?? "").trim(), effects, description: r.description };
+    const out: Json = {
+      kind: "conditional",
+      when: (r.when ?? "").trim(),
+      effects,
+      description: r.description,
+    };
     if (r.required === true) {
       const message =
         r.message ??
-        (field ? resolve(constraintChain(entityName, field, "required", "radd.required")) : "radd.required");
+        (field
+          ? resolve(constraintChain(entityName, field, "required", "radd.required"))
+          : "radd.required");
       out.severity = severity;
       out.message = message;
-      out.code = r.code ?? r.message ?? [camelCase(entityName), fieldName, "required"].filter(Boolean).join(".");
+      out.code =
+        r.code ??
+        r.message ??
+        [camelCase(entityName), fieldName, "required"].filter(Boolean).join(".");
     }
     return compact(out);
   };
 
-  const validatorUse = (u: RawValidatorUse, entityName: string, fieldName: string | undefined): Json => {
+  const validatorUse = (
+    u: RawValidatorUse,
+    entityName: string,
+    fieldName: string | undefined,
+  ): Json => {
     const chain = validatorChain(loaded, entityName, fieldName, u);
-    const specific = fieldName ? `${camelCase(entityName)}.${fieldName}.${u.name}` : `${camelCase(entityName)}.${u.name}`;
+    const specific = fieldName
+      ? `${camelCase(entityName)}.${fieldName}.${u.name}`
+      : `${camelCase(entityName)}.${u.name}`;
     return compact({
       name: u.name,
       params: u.params ?? {},
@@ -106,8 +127,14 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
     const indexes = new Map<string, Json>();
     const tableName = raw.dbName ?? e.name;
     const columnOf = (f: string) => raw.fields[f]?.dbName ?? titleCase(f);
-    const addIndex = (fieldsList: string[], unique: boolean, dbName: string | undefined, description: string | undefined) => {
-      const name = dbName ?? `${unique ? "UX" : "IX"}_${tableName}_${fieldsList.map(columnOf).join("_")}`;
+    const addIndex = (
+      fieldsList: string[],
+      unique: boolean,
+      dbName: string | undefined,
+      description: string | undefined,
+    ) => {
+      const name =
+        dbName ?? `${unique ? "UX" : "IX"}_${tableName}_${fieldsList.map(columnOf).join("_")}`;
       const key = `${unique}|${fieldsList.join(",")}`;
       const existing = indexes.get(key);
       if (existing) {
@@ -125,7 +152,9 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
       for (const k of CONSTRAINT_KEYS) constraints[k] = field.constraints[k];
       const fieldMessages: Json = {};
       for (const [constraint, frameworkKey] of constraintMessages(field)) {
-        fieldMessages[constraint] = resolve(constraintChain(e.name, field, constraint, frameworkKey));
+        fieldMessages[constraint] = resolve(
+          constraintChain(e.name, field, constraint, frameworkKey),
+        );
       }
       const optional: Json = {};
       for (const k of OPTIONAL_FIELD_KEYS) optional[k] = present(`${ek}.${name}.${k}`);
@@ -139,7 +168,11 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
           onDelete: f.references.onDelete ?? "restrict",
         };
       } else if (field.lookup?.entity !== undefined) {
-        references = { entity: field.lookup.entity, field: field.lookup.value, onDelete: "restrict" };
+        references = {
+          entity: field.lookup.entity,
+          field: field.lookup.value,
+          onDelete: "restrict",
+        };
       }
 
       let computed: Json | undefined;
@@ -187,11 +220,18 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
       });
     }
 
-    for (const ix of raw.indexes ?? []) addIndex(ix.fields, ix.unique ?? false, ix.dbName, ix.description);
+    for (const ix of raw.indexes ?? [])
+      addIndex(ix.fields, ix.unique ?? false, ix.dbName, ix.description);
 
     const relationships: Json = {};
     for (const [name, r] of Object.entries(raw.relationships ?? {})) {
-      relationships[name] = compact({ kind: r.kind, entity: r.entity, foreignKey: r.foreignKey, through: r.through, description: r.description });
+      relationships[name] = compact({
+        kind: r.kind,
+        entity: r.entity,
+        foreignKey: r.foreignKey,
+        through: r.through,
+        description: r.description,
+      });
     }
     const optional: Json = {};
     for (const k of OPTIONAL_ENTITY_KEYS) optional[k] = present(`${ek}.${k}`);
@@ -206,7 +246,9 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
       primaryKey: primaryKeyOf(raw),
       fieldOrder,
       fields,
-      indexes: [...indexes.values()].sort((a, b) => String(a.dbName).localeCompare(String(b.dbName))),
+      indexes: [...indexes.values()].sort((a, b) =>
+        String(a.dbName).localeCompare(String(b.dbName)),
+      ),
       relationships,
       rules: (raw.rules ?? []).map((r) => rule(r, e.name, undefined, undefined)),
       validators: (raw.validators ?? []).map((v) => validatorUse(v, e.name, undefined)),
@@ -243,11 +285,22 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
         tags: d.tags?.length ? asSet(d.tags) : undefined,
         type: d.type,
         ...constraints,
-        default: d.default === undefined ? undefined : typeof d.default === "object" ? { expression: d.default.expression.trim() } : { value: d.default },
+        default:
+          d.default === undefined
+            ? undefined
+            : typeof d.default === "object"
+              ? { expression: d.default.expression.trim() }
+              : { value: d.default },
         lookup: d.lookup ? lookup(d.lookup) : undefined,
         rules: (d.rules ?? []).map((r) => rule(r, t.name, undefined, undefined)),
         validators: (d.validators ?? []).map((u) =>
-          compact({ name: u.name, params: u.params ?? {}, severity: u.severity ?? "error", code: u.code, message: u.message }),
+          compact({
+            name: u.name,
+            params: u.params ?? {},
+            severity: u.severity ?? "error",
+            code: u.code,
+            message: u.message,
+          }),
         ),
       });
     }),
@@ -255,16 +308,39 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
       compact({
         description: l.data.description,
         valueType: l.data.valueType,
-        items: l.data.items.map((i) => compact({ code: i.code, label: i.label, sortOrder: i.sortOrder, active: i.active ?? true, description: i.description })),
+        items: l.data.items.map((i) =>
+          compact({
+            code: i.code,
+            label: i.label,
+            sortOrder: i.sortOrder,
+            active: i.active ?? true,
+            description: i.description,
+          }),
+        ),
       }),
     ),
     entities: byName(loaded.entities, entity),
     validators: byName(loaded.validators, (v) =>
-      compact({ description: v.data.description, scope: v.data.scope, parameters: (v.data.parameters ?? []).map(param), message: v.data.message }),
+      compact({
+        description: v.data.description,
+        scope: v.data.scope,
+        parameters: (v.data.parameters ?? []).map(param),
+        message: v.data.message,
+      }),
     ),
-    calculators: byName(loaded.calculators, (c) => compact({ description: c.data.description, parameters: (c.data.parameters ?? []).map(param) })),
+    calculators: byName(loaded.calculators, (c) =>
+      compact({
+        description: c.data.description,
+        parameters: (c.data.parameters ?? []).map(param),
+      }),
+    ),
     functions: byName(loaded.functions, (f) =>
-      compact({ description: f.data.description, parameters: f.data.parameters.map((p) => compact({ ...p })), returns: f.data.returns, clientSafe: f.data.clientSafe ?? false }),
+      compact({
+        description: f.data.description,
+        parameters: f.data.parameters.map((p) => compact({ ...p })),
+        returns: f.data.returns,
+        clientSafe: f.data.clientSafe ?? false,
+      }),
     ),
     messages: allMessages,
   };
@@ -274,5 +350,10 @@ export function buildCanonical(loaded: LoadedDictionary): Json {
 }
 
 function param(p: { name: string; type: string; required?: boolean; description?: string }): Json {
-  return compact({ name: p.name, type: p.type, required: p.required ?? false, description: p.description });
+  return compact({
+    name: p.name,
+    type: p.type,
+    required: p.required ?? false,
+    description: p.description,
+  });
 }

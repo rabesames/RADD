@@ -1,5 +1,11 @@
 import { buildCanonical } from "./canonical.js";
-import { compareDiagnostics, type Diagnostic, type PendingDiagnostic, RULES, toPointer } from "./diagnostics.js";
+import {
+  compareDiagnostics,
+  type Diagnostic,
+  type PendingDiagnostic,
+  RULES,
+  toPointer,
+} from "./diagnostics.js";
 import { formatCanonical } from "./hash.js";
 import { lintSemantics } from "./lint.js";
 import { type LoadedDictionary, loadDictionary } from "./loader.js";
@@ -79,5 +85,10 @@ export function build(dir: string): BuildResult {
   const { loaded, result } = run(dir);
   if (!result.ok) return result;
   const document = buildCanonical(loaded);
-  return { ...result, document, version: String(document.version), json: formatCanonical(document) };
+  return {
+    ...result,
+    document,
+    version: String(document.version),
+    json: formatCanonical(document),
+  };
 }

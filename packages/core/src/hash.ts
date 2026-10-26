@@ -6,7 +6,8 @@ import { createHash } from "node:crypto";
  */
 export function canonicalize(value: unknown): string {
   if (value === null || typeof value !== "object") {
-    if (typeof value === "number" && !Number.isFinite(value)) throw new Error("JCS cannot encode non-finite numbers.");
+    if (typeof value === "number" && !Number.isFinite(value))
+      throw new Error("JCS cannot encode non-finite numbers.");
     return JSON.stringify(value);
   }
   if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;

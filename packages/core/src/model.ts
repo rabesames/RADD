@@ -154,7 +154,13 @@ export interface RawStaticLookup {
   lookup: string;
   description?: string;
   valueType: "string" | "integer";
-  items: { code: string | number; label: string; sortOrder?: number; active?: boolean; description?: string }[];
+  items: {
+    code: string | number;
+    label: string;
+    sortOrder?: number;
+    active?: boolean;
+    description?: string;
+  }[];
 }
 
 export interface RawParameter {
