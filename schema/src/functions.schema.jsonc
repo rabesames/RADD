@@ -1,3 +1,4 @@
+// Custom CEL functions (functions.yaml). Edit this file, not schema/v1; see common.schema.jsonc.
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/functions.schema.json",
@@ -41,6 +42,7 @@
     }
   },
   "$defs": {
+    // A shallow check of the type syntax: the types inside list() and map() are not validated.
     "celType": {
       "type": "string",
       "description": "A CEL type: bool, int, uint, double, string, bytes, timestamp, duration, dyn, list(T) or map(K, V).",

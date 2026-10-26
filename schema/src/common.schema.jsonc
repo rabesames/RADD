@@ -1,3 +1,12 @@
+// Shared definitions for the dictionary file schemas, referenced as common.schema.json#/$defs/...
+//
+// Edit this file, not schema/v1: npm run schema:build writes the strict JSON that editors and
+// radd lint load. "description" values are what authors see as editor hover text; these comments
+// are for people maintaining the schema.
+//
+// The schemas check one file's structure. Anything that needs other files or the field's type
+// (references, type fit, naming, translations) is a radd lint rule; see docs/lint-rules.md.
+// Avoid unevaluatedProperties and $dynamicRef: the VS Code YAML extension does not support them.
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/common.schema.json",
@@ -39,6 +48,8 @@
       "enum": ["error", "warning", "info"],
       "default": "error"
     },
+    // At least two dot-separated segments (customer.displayLabel), so a key cannot be confused with
+    // plain text. Whether the key exists in i18n/ is checked by lint (RADD501).
     "messageKey": {
       "type": "string",
       "description": "A message key resolved from i18n/, for example customer.vipNotes.recommended.",
@@ -91,6 +102,7 @@
         "description": { "$ref": "#/$defs/description" }
       }
     },
+    // A literal or { expression }. Whether a literal fits the field's type is lint (RADD211).
     "default": {
       "description": "Default value. A literal of the field's type, or { expression: \"...\" } for a computed default such as newGuid() or ctx.now.",
       "oneOf": [
@@ -103,6 +115,8 @@
         }
       ]
     },
+    // The string form is shorthand for { kind }. Which fields and types may be generated depends on
+    // the entity, so those checks are lint (RADD213, RADD214).
     "generated": {
       "description": "Primary key value generation. identity: the database assigns 1, 2, 3, ... (integer or long). uuid: the application assigns a GUID before insert (guid). Generated keys are always read-only.",
       "oneOf": [
@@ -134,6 +148,7 @@
               "default": false
             }
           },
+          // The identity options mean nothing for a uuid key.
           "if": { "properties": { "kind": { "const": "uuid" } } },
           "then": { "properties": { "seed": false, "increment": false, "noReuse": false } }
         }
@@ -161,6 +176,10 @@
         }
       }
     },
+    // One object for every kind, with an if/then per kind below that forbids (false) the properties
+    // of the other kinds. A oneOf of per-kind objects would report a failure for every branch, which
+    // editors show as a wall of errors; this shape gives one error on the stray property.
+    // Whether the kind suits the field's type is lint (RADD212); ICU pattern syntax is RADD704.
     "displayFormat": {
       "type": "object",
       "description": "How a stored value is rendered for reading, using ICU patterns. Presentation only: the API stores and returns raw values.",
@@ -237,6 +256,7 @@
         {
           "if": { "properties": { "kind": { "enum": ["date", "time", "datetime"] } } },
           "then": {
+            // A date takes an ICU pattern or a named style, not both.
             "oneOf": [{ "required": ["pattern"] }, { "required": ["style"] }],
             "properties": {
               "symbols": false,
@@ -265,6 +285,7 @@
         {
           "if": { "properties": { "kind": { "const": "text" } } },
           "then": {
+            // Text display is a case change or a mask, not both.
             "oneOf": [{ "required": ["case"] }, { "required": ["mask"] }],
             "properties": {
               "pattern": false,
@@ -278,6 +299,7 @@
         }
       ]
     },
+    // Same shape as displayFormat: one object, with an if/then per kind.
     "editFormat": {
       "type": "object",
       "description": "How the value looks and is typed while editing, and how input is parsed back to a raw value.",
@@ -373,6 +395,9 @@
         }
       ]
     },
+    // Two kinds of rule share this object. An expression rule has expression (optionally guarded by
+    // when) and must name a message. A conditional rule has when and at least one of required,
+    // readOnly or visible. The if/then/else at the end tells them apart by whether expression is set.
     "rule": {
       "type": "object",
       "description": "A conditional rule (when + required, readOnly or visible) or an expression rule (expression, optionally guarded by when).",
@@ -452,6 +477,8 @@
       "description": "Named server validators. They run only on the API.",
       "items": { "$ref": "#/$defs/validatorUse" }
     },
+    // A static list ({ list }) or a reference table ({ entity, value, display }); the if/then/else at
+    // the end decides by whether list is set. filter and dependsOn apply to both.
     "lookup": {
       "type": "object",
       "description": "Lookup: a static list ({ list: gender }) or a reference table ({ entity, value, display }). A reference-table lookup creates a foreign key.",
@@ -519,6 +546,8 @@
         }
       }
     },
+    // source decides which properties apply: sql and stored for database; persisted and exactly one
+    // of expression or calculator for application.
     "computed": {
       "type": "object",
       "description": "Where a computed field's value comes from. Computed fields are always read-only.",
@@ -565,6 +594,9 @@
         "oneOf": [{ "required": ["expression"] }, { "required": ["calculator"] }]
       }
     },
+    // Never referenced as a whole. Fields and domain types reference each property
+    // (common.schema.json#/$defs/constraints/properties/maxLength) because both set
+    // additionalProperties: false, which does not see properties added through allOf.
     "constraints": {
       "description": "Constraint properties shared by fields and domain types.",
       "type": "object",
@@ -591,6 +623,8 @@
           "maximum": 38,
           "description": "Digits after the decimal point (decimal)."
         },
+        // min and max are JSON numbers, so values beyond about 15 significant digits lose precision.
+        // Whether they fit the type, precision and scale is lint (RADD211).
         "min": {
           "type": "number",
           "description": "Inclusive minimum (integer, long, decimal). Enforced by the API, checked by the client, and a CHECK constraint where the database supports one."
@@ -604,11 +638,14 @@
           "description": "Built-in format check.",
           "enum": ["email", "url", "phone"]
         },
+        // RE2, so a pattern behaves the same in every runtime; lint compiles it (RADD703).
         "pattern": {
           "type": "string",
           "minLength": 1,
           "description": "Regular expression in RE2 syntax (no lookbehind or backreferences), for example ^09\\d{9}$."
         },
+        // Overlaps displayFormat { kind: text, mask } and editFormat { kind: mask }; kept until the
+        // stage 1 review decides whether the field-level mask stays.
         "mask": {
           "type": "string",
           "minLength": 1,

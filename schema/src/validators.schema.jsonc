@@ -1,3 +1,4 @@
+// Named server validators (validators.yaml). Edit this file, not schema/v1; see common.schema.jsonc.
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/validators.schema.json",

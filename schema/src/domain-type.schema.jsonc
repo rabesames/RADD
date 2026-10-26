@@ -1,3 +1,6 @@
+// One domain type per file (types/*.yaml). Edit this file, not schema/v1; see common.schema.jsonc.
+// The properties mirror a field's, minus those that only make sense on one field (names, keys,
+// labels, relationships, computed). Fields inherit everything here and may override constraints.
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/domain-type.schema.json",

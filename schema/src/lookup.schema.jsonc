@@ -1,3 +1,5 @@
+// One static lookup per file (lookups/*.yaml). Edit this file, not schema/v1; see
+// common.schema.jsonc. Whether item codes match valueType is lint (RADD210).
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/lookup.schema.json",

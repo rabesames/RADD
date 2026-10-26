@@ -1,3 +1,4 @@
+// One entity per file (entities/*.yaml). Edit this file, not schema/v1; see common.schema.jsonc.
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/entity.schema.json",
@@ -33,6 +34,8 @@
         }
       ]
     },
+    // A map, not a list, so field names are unique and editors complete them as keys. The loader
+    // keeps YAML key order, which sets column, property and form order.
     "fields": {
       "type": "object",
       "description": "Fields by logical name (lowerCamelCase). Declaration order is significant: it sets column, property and default form order.",
@@ -81,6 +84,7 @@
       "type": "object",
       "description": "A field. Give either type or domain.",
       "additionalProperties": false,
+      // type or domain. Both together passes the schema but fails lint (RADD209), which can say why.
       "anyOf": [{ "required": ["type"] }, { "required": ["domain"] }],
       "properties": {
         "type": { "$ref": "common.schema.json#/$defs/logicalType" },
@@ -115,6 +119,7 @@
           "default": false
         },
         "default": { "$ref": "common.schema.json#/$defs/default" },
+        // Constraints are referenced one by one; see the note on constraints in common.schema.jsonc.
         "maxLength": { "$ref": "common.schema.json#/$defs/constraints/properties/maxLength" },
         "minLength": { "$ref": "common.schema.json#/$defs/constraints/properties/minLength" },
         "precision": { "$ref": "common.schema.json#/$defs/constraints/properties/precision" },
@@ -201,6 +206,7 @@
         },
         "description": { "$ref": "common.schema.json#/$defs/description" }
       },
+      // manyToMany goes through a join entity; the other kinds name a foreign key.
       "if": { "properties": { "kind": { "const": "manyToMany" } } },
       "then": { "required": ["through"], "properties": { "foreignKey": false } },
       "else": { "required": ["foreignKey"], "properties": { "through": false } }

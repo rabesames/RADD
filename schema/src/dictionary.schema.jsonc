@@ -1,3 +1,4 @@
+// The dictionary root file (dictionary.yaml). Edit this file, not schema/v1; see common.schema.jsonc.
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/rabesames/RADD/main/schema/v1/dictionary.schema.json",
@@ -13,6 +14,8 @@
       "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
     },
     "description": { "$ref": "common.schema.json#/$defs/description" },
+    // A breaking change to the file format gets formatVersion 2 and its own schema/v2 folder, so
+    // editors keep validating version 1 dictionaries.
     "formatVersion": {
       "const": 1,
       "description": "The RADD dictionary format these files are written in. The dictionary's own version is the content hash computed by radd build."
@@ -70,6 +73,8 @@
     }
   },
   "$defs": {
+    // A practical subset of BCP 47 (language, then optional subtags). Lint checks that every
+    // supported locale has an i18n file and the default is in supported (RADD505).
     "locale": {
       "type": "string",
       "description": "A BCP 47 language tag, for example en, fil or en-PH.",
