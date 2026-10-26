@@ -32,7 +32,10 @@ describe("conformance: build vectors", () => {
     expect(result.diagnostics.filter((d) => d.severity === "error")).toEqual([]);
     const expectedPath = join(dir, "expected.json");
     if (update) writeFileSync(expectedPath, result.json as string);
-    expect(existsSync(expectedPath), `${name}/expected.json is missing; run with RADD_UPDATE_VECTORS=1`).toBe(true);
+    expect(
+      existsSync(expectedPath),
+      `${name}/expected.json is missing; run with RADD_UPDATE_VECTORS=1`,
+    ).toBe(true);
     expect(result.json).toBe(readFileSync(expectedPath, "utf8").replaceAll("\r\n", "\n"));
   });
 });
